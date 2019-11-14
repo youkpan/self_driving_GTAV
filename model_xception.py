@@ -42,25 +42,14 @@ def model1():
     x = BatchNormalization(name='block1_conv1_bn')(x)
     
     x = Activation('relu', name='block1_conv1_act')(x)
-    x = Conv2D(32, (3, 3), use_bias=False, name='block1_conv2')(x)
+    x = Conv2D(64, (3, 3), use_bias=False, name='block1_conv2')(x)
     x = BatchNormalization(name='block1_conv2_bn')(x)
     print("modex.shape 0",x.shape)
-
-    x = Activation('relu', name='block2_sepconv2_act1')(x)
-    x = SeparableConv2D(32, (3, 3), padding='same', use_bias=False, name='block2_sepconv21')(x)
-    x = BatchNormalization(name='block2_sepconv2_bn1')(x)
+ 
+    x = Activation('relu', name='block1_conv1_act1')(x)
+    x = Conv2D(64, (3, 3), use_bias=False, name='block1_conv21')(x)
+    x = BatchNormalization(name='block1_conv2_bn1')(x)
     print("modex.shape 1",x.shape)
-
-    x = Activation('relu', name='block2_sepconv2_act2')(x)
-    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block2_sepconv22')(x)
-    x = BatchNormalization(name='block2_sepconv2_bn2')(x)
-    print("modex.shape 2",x.shape)
-
-    x = Activation('relu', name='block2_sepconv2_act3')(x)
-    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block2_sepconv23')(x)
-    x = BatchNormalization(name='block2_sepconv2_bn3')(x)
-    print("modex.shape 3",x.shape)
-
 
     '''
     x = Activation('relu', name='block1_conv2_act')(x)
@@ -108,51 +97,50 @@ def model1():
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same', name='block4_pool')(x)
     x = layers.add([x, residual])
 
-    
-    for i in range(1):
+    '''
+    for i in range(0):
         residual = x
         prefix = 'block' + str(i + 5)
 
         x = Activation('relu', name=prefix + '_sepconv1_act')(x)
-        x = SeparableConv2D(728, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv1')(x)
+        x = SeparableConv2D(128, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv1')(x)
         x = BatchNormalization(name=prefix + '_sepconv1_bn')(x)
         x = Activation('relu', name=prefix + '_sepconv2_act')(x)
-        x = SeparableConv2D(728, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv2')(x)
+        x = SeparableConv2D(128, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv2')(x)
         x = BatchNormalization(name=prefix + '_sepconv2_bn')(x)
         x = Activation('relu', name=prefix + '_sepconv3_act')(x)
-        x = SeparableConv2D(728, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv3')(x)
+        x = SeparableConv2D(128, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv3')(x)
         x = BatchNormalization(name=prefix + '_sepconv3_bn')(x)
 
         x = layers.add([x, residual])
     
-
-    residual = Conv2D(1024, (1, 1), strides=(2, 2),
+    
+    residual = Conv2D(64, (1, 1), strides=(2, 2),
                       padding='same', use_bias=False)(x)
     residual = BatchNormalization()(residual)
 
     x = Activation('relu', name='block13_sepconv1_act')(x)
-    x = SeparableConv2D(728, (3, 3), padding='same', use_bias=False, name='block13_sepconv1')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block13_sepconv1')(x)
     x = BatchNormalization(name='block13_sepconv1_bn')(x)
-
     
     x = Activation('relu', name='block13_sepconv2_act')(x)
-    x = SeparableConv2D(1024, (3, 3), padding='same', use_bias=False, name='block13_sepconv2')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block13_sepconv2')(x)
     x = BatchNormalization(name='block13_sepconv2_bn')(x)
 
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same', name='block13_pool')(x)
     x = layers.add([x, residual])
-
-    x = SeparableConv2D(1536, (3, 3), padding='same', use_bias=False, name='block14_sepconv1')(x)
+    '''
+    x = SeparableConv2D(256, (3, 3), padding='same', use_bias=False, name='block14_sepconv1')(x)
     x = BatchNormalization(name='block14_sepconv1_bn')(x)
     x = Activation('relu', name='block14_sepconv1_act')(x)
  
-    x = SeparableConv2D(2048, (3, 3), padding='same', use_bias=False, name='block14_sepconv2')(x)
+    x = SeparableConv2D(256, (3, 3), padding='same', use_bias=False, name='block14_sepconv2')(x)
     x = BatchNormalization(name='block14_sepconv2_bn')(x)
     x = Activation('relu', name='block14_sepconv2_act')(x)
     '''
     
     x = GlobalAveragePooling2D(name='avg_pool_')(x)
-    x = Dense(200, activation='softmax', name='predictions_')(x)
+    x = Dense(64, activation='softmax', name='predictions_')(x)
     '''
     
     if include_top:
@@ -252,27 +240,30 @@ def Xception(include_top=True, weights='imagenet',
     img_input0 =Lambda(slice,arguments={'idx': 0})(img_input)
 
     x0=model_c(img_input0)
-    x0 = Dense(40, activation='softmax', name='predictions0')(x0)
+    x0 = Dense(40, activation='relu', name='predictions0')(x0)
 
     img_input1 =Lambda(slice,arguments={'idx': 1})(img_input)
     x1=model_c(img_input1)
-    x1 = Dense(40, activation='softmax', name='predictions1')(x1)
+    x1 = Dense(40, activation='relu', name='predictions1')(x1)
 
     img_input2 =Lambda(slice,arguments={'idx': 2})(img_input)
     x2=model_c(img_input2)
-    x2 = Dense(40, activation='softmax', name='predictions2')(x2)
+    x2 = Dense(40, activation='relu', name='predictions2')(x2)
 
     #img_input3 =Lambda(slice,arguments={'idx': 3})(img_input)
     #x3 = model_c(img_input3)
-    #x3 = Dense(40, activation='softmax', name='predictions3')(x3)
+    #x3 = Dense(40, activation='relu', name='predictions3')(x3)
 
     print("x0.shape",x0.shape)
     #x = np.add(x0,x1)
     #x = np.add(x,x2)
     #x = np.add(x,x3)
 
-    added = layers.add([x0, x1])
-    x = layers.add([added, x2])
+    #x = x0
+
+    x = layers.add([x0, x1])
+    x = layers.add([x, x2])
+    x = Dense(40, activation='softmax', name='predictions4')(x)
     #x = layers.add([x, x3])
 
     '''
@@ -344,8 +335,8 @@ if __name__ == '__main__':
                 y_train = np_utils.to_categorical(y_train, num_classes=40)
                 y_test = np_utils.to_categorical(y_test, num_classes=40)
 
-                print("x_train.shape",x_train.shape)
-                print("y_train.shape",y_train.shape)
+                #print("x_train.shape",x_train.shape)
+                #print("y_train.shape",y_train.shape)
                 # Fit model to batch
                 model.fit(x_train, y_train, verbose=1,epochs=1, 
                     validation_data=(x_test, y_test))
@@ -354,10 +345,11 @@ if __name__ == '__main__':
                 # Save a checkpoint
                 if (batch_count % 20) == 0:
                     print('Saving checkpoint ' + str(batch_count))
-                    model.save('model_checkpoint' + batch_count + '.h5')
+                    model.save('save\\model_checkpoint' + str(batch_count) + '.h5')
                     print('Checkpoint saved. Continuing...')
+
     except Exception as e:
         print('Excepted with ' + str(e))
         print('Saving model...')
-        model.save('model_trained_categorical.h5')
+        model.save('save\\model_trained_categorical.h5')
         print('Model saved.')

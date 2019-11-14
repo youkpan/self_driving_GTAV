@@ -14,11 +14,11 @@ def crop_bottom_half(image):
 def get_steering(steering):
 
     if steering >=0:
-        steering1 =  int( 2* math.pow(0.2*float(steering),0.4) *20 )
+        steering1 =  int( 1.9* math.pow(0.2*float(steering),0.4) *20 )
     else:
-        steering1 =  int( -2* math.pow(-0.2*float(steering),0.4) *20 )
+        steering1 =  int( -1.9* math.pow(-0.2*float(steering),0.4) *20 )
 
-    return steering1+20
+    return steering1+19
 
 frames = {}
 frame_index = 0
@@ -44,7 +44,7 @@ def get_image_fifo(index_offset):
 def append_data(data1,data2):
     return np.append(data1,[data2],0)
 
-def load_batches(verbose=1,samples_per_batch=1000):
+def load_batches(verbose=1,samples_per_batch=100):
     ''' Generator for loading batches of frames'''
     global frame_index,frames,frames_inited
     dataset = gzip.open('dataset.pz')

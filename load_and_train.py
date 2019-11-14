@@ -7,7 +7,7 @@ from keras.utils import np_utils
 
 
 print("Loading Model ...")
-model = load_model('/save/model_trained_categorical.h5') # Load desired checkpoint to train from
+model = load_model('save\\model_trained_categorical.h5') # Load desired checkpoint to train from
 print("Model Loaded. Compiling...")
 model.compile(optimizer='Adadelta', loss='categorical_crossentropy', metrics=['accuracy'])
 
@@ -32,6 +32,8 @@ try:
                 print('Saving checkpoint ' + str(batch_count))
                 model.save('save\\model_checkpoint' + batch_count + '.h5')
                 print('Checkpoint saved. Continuing...')
+
+                
 except Exception as e:
 
     print('Excepted with ' + str(e))

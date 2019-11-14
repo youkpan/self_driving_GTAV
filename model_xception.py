@@ -42,74 +42,70 @@ def model1():
     x = BatchNormalization(name='block1_conv1_bn')(x)
     
     x = Activation('relu', name='block1_conv1_act')(x)
-    x = Conv2D(64, (3, 3), use_bias=False, name='block1_conv2')(x)
+    x = Conv2D(128, (3, 3), use_bias=False, name='block1_conv2')(x)
     x = BatchNormalization(name='block1_conv2_bn')(x)
     print("modex.shape 0",x.shape)
  
-    x = Activation('relu', name='block1_conv1_act1')(x)
-    x = Conv2D(64, (3, 3), use_bias=False, name='block1_conv21')(x)
-    x = BatchNormalization(name='block1_conv2_bn1')(x)
-    print("modex.shape 1",x.shape)
 
-    '''
+
     x = Activation('relu', name='block1_conv2_act')(x)
-    residual = Conv2D(128, (1, 1), strides=(2, 2),
+    residual = Conv2D(64, (1, 1), strides=(2, 2),
                       padding='same', use_bias=False)(x)
     residual = BatchNormalization()(residual)
     
-    x = SeparableConv2D(128, (3, 3), padding='same', use_bias=False, name='block2_sepconv1')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block2_sepconv1')(x)
     x = BatchNormalization(name='block2_sepconv1_bn')(x)
     
     x = Activation('relu', name='block2_sepconv2_act')(x)
-    x = SeparableConv2D(128, (3, 3), padding='same', use_bias=False, name='block2_sepconv2')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block2_sepconv2')(x)
     x = BatchNormalization(name='block2_sepconv2_bn')(x)
 
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same', name='block2_pool')(x)
     x = layers.add([x, residual])
  
-    residual = Conv2D(256, (1, 1), strides=(2, 2),
+ 
+    residual = Conv2D(64, (1, 1), strides=(2, 2),
                       padding='same', use_bias=False)(x)
     residual = BatchNormalization()(residual)
     
     x = Activation('relu', name='block3_sepconv1_act')(x)
-    x = SeparableConv2D(256, (3, 3), padding='same', use_bias=False, name='block3_sepconv1')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block3_sepconv1')(x)
     x = BatchNormalization(name='block3_sepconv1_bn')(x)
 
     x = Activation('relu', name='block3_sepconv2_act')(x)
-    x = SeparableConv2D(256, (3, 3), padding='same', use_bias=False, name='block3_sepconv2')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block3_sepconv2')(x)
     x = BatchNormalization(name='block3_sepconv2_bn')(x)
 
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same', name='block3_pool')(x)
     x = layers.add([x, residual])
 
-    residual = Conv2D(728, (1, 1), strides=(2, 2),
+    residual = Conv2D(64, (1, 1), strides=(2, 2),
                       padding='same', use_bias=False)(x)
     residual = BatchNormalization()(residual)
 
     x = Activation('relu', name='block4_sepconv1_act')(x)
-    x = SeparableConv2D(728, (3, 3), padding='same', use_bias=False, name='block4_sepconv1')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block4_sepconv1')(x)
     x = BatchNormalization(name='block4_sepconv1_bn')(x)
 
     x = Activation('relu', name='block4_sepconv2_act')(x)
-    x = SeparableConv2D(728, (3, 3), padding='same', use_bias=False, name='block4_sepconv2')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block4_sepconv2')(x)
     x = BatchNormalization(name='block4_sepconv2_bn')(x)
  
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same', name='block4_pool')(x)
     x = layers.add([x, residual])
-
-    '''
-    for i in range(0):
+ 
+    for i in range(8):
         residual = x
         prefix = 'block' + str(i + 5)
 
         x = Activation('relu', name=prefix + '_sepconv1_act')(x)
-        x = SeparableConv2D(128, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv1')(x)
+        x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv1')(x)
         x = BatchNormalization(name=prefix + '_sepconv1_bn')(x)
         x = Activation('relu', name=prefix + '_sepconv2_act')(x)
-        x = SeparableConv2D(128, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv2')(x)
+        x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv2')(x)
         x = BatchNormalization(name=prefix + '_sepconv2_bn')(x)
         x = Activation('relu', name=prefix + '_sepconv3_act')(x)
-        x = SeparableConv2D(128, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv3')(x)
+        x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv3')(x)
         x = BatchNormalization(name=prefix + '_sepconv3_bn')(x)
 
         x = layers.add([x, residual])
@@ -129,15 +125,14 @@ def model1():
 
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same', name='block13_pool')(x)
     x = layers.add([x, residual])
-    '''
-    x = SeparableConv2D(256, (3, 3), padding='same', use_bias=False, name='block14_sepconv1')(x)
+
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block14_sepconv1')(x)
     x = BatchNormalization(name='block14_sepconv1_bn')(x)
     x = Activation('relu', name='block14_sepconv1_act')(x)
  
-    x = SeparableConv2D(256, (3, 3), padding='same', use_bias=False, name='block14_sepconv2')(x)
+    x = SeparableConv2D(64, (3, 3), padding='same', use_bias=False, name='block14_sepconv2')(x)
     x = BatchNormalization(name='block14_sepconv2_bn')(x)
-    x = Activation('relu', name='block14_sepconv2_act')(x)
-    '''
+
     
     x = GlobalAveragePooling2D(name='avg_pool_')(x)
     x = Dense(64, activation='softmax', name='predictions_')(x)
@@ -303,7 +298,7 @@ if __name__ == '__main__':
           metrics=['accuracy'])
     batch_count = 0
     try:
-        for i in range(0,5):
+        for i in range(0,30000):
             print('----------- On Epoch: ' + str(i) + ' ----------')
             for x_train, y_train, x_test, y_test in load_batches():   
                 # Model input requires numpy array
@@ -343,7 +338,7 @@ if __name__ == '__main__':
                 
                 batch_count += 1
                 # Save a checkpoint
-                if (batch_count % 20) == 0:
+                if (batch_count % 20) == 1:
                     print('Saving checkpoint ' + str(batch_count))
                     model.save('save\\model_checkpoint' + str(batch_count) + '.h5')
                     print('Checkpoint saved. Continuing...')

@@ -24,8 +24,8 @@ max_frame = frame_per_second * 10
 def insert_image_fifo(frame):
 
     frames[frame_index] = frame
-    frame_index ++ 
-    if( frame_index >= max_frame)
+    frame_index +=1
+    if( frame_index >= max_frame):
         frame_index = 0
 
 

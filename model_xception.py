@@ -33,81 +33,8 @@ from keras.utils import np_utils
 from keras.applications.imagenet_utils import decode_predictions
 from keras.preprocessing import image
 
-
-def Xception(include_top=True, weights='imagenet',
-             input_tensor=None, input_shape=None,
-             pooling=None):
-    """Instantiates the Xception architecture.
-    Optionally loads weights pre-trained
-    on ImageNet. This model is available for TensorFlow only,
-    and can only be used with inputs following the TensorFlow
-    data format `(width, height, channels)`.
-    You should set `image_data_format="channels_last"` in your Keras config
-    located at ~/.keras/keras.json.
-    Note that the default input image size for this model is 299x299.
-    # Arguments
-        include_top: whether to include the fully-connected
-            layer at the top of the network.
-        weights: one of `None` (random initialization)
-            or "imagenet" (pre-training on ImageNet).
-        input_tensor: optional Keras tensor (i.e. output of `layers.Input()`)
-            to use as image input for the model.
-        input_shape: optional shape tuple, only to be specified
-            if `include_top` is False (otherwise the input shape
-            has to be `(299, 299, 3)`.
-            It should have exactly 3 inputs channels,
-            and width and height should be no smaller than 71.
-            E.g. `(150, 150, 3)` would be one valid value.
-        pooling: Optional pooling mode for feature extraction
-            when `include_top` is `False`.
-            - `None` means that the output of the model will be
-                the 4D tensor output of the
-                last convolutional layer.
-            - `avg` means that global average pooling
-                will be applied to the output of the
-                last convolutional layer, and thus
-                the output of the model will be a 2D tensor.
-            - `max` means that global max pooling will
-                be applied.
-        classes: optional number of classes to classify images
-            into, only to be specified if `include_top` is True, and
-            if no `weights` argument is specified.
-    # Returns
-        A Keras model instance.
-    # Raises
-        ValueError: in case of invalid argument for `weights`,
-            or invalid input shape.
-        RuntimeError: If attempting to run this model with a
-            backend that does not support separable convolutions.
-    """
-    if K.backend() != 'tensorflow':
-        raise RuntimeError('The Xception model is only available with '
-                           'the TensorFlow backend.')
-    if K.image_data_format() != 'channels_last':
-        warnings.warn('The Xception model is only available for the '
-                      'input data format "channels_last" '
-                      '(width, height, channels). '
-                      'However your settings specify the default '
-                      'data format "channels_first" (channels, width, height). '
-                      'You should set `image_data_format="channels_last"` in your Keras '
-                      'config located at ~/.keras/keras.json. '
-                      'The model being returned right now will expect inputs '
-                      'to follow the "channels_last" data format.')
-        K.set_image_data_format('channels_last')
-        old_data_format = 'channels_first'
-    else:
-        old_data_format = None
-
-    input_shape = (160,320,3)
-
-    if input_tensor is None:
-        img_input = Input(shape=input_shape)
-    else:
-        if not K.is_keras_tensor(input_tensor):
-            img_input = Input(tensor=input_tensor, shape=input_shape)
-        else:
-            img_input = input_tensor
-
+def model1(img_input,include_top):
+    print("model1 img_input.shape",img_input.shape)
     x = Conv2D(32, (3, 3), strides=(2, 2), use_bias=False, name='block1_conv1')(img_input)
     x = BatchNormalization(name='block1_conv1_bn')(x)
     x = Activation('relu', name='block1_conv1_act')(x)
@@ -194,14 +121,121 @@ def Xception(include_top=True, weights='imagenet',
     x = BatchNormalization(name='block14_sepconv2_bn')(x)
     x = Activation('relu', name='block14_sepconv2_act')(x)
 
+    x = GlobalAveragePooling2D(name='avg_pool_')(x)
+    x = Dense(200, activation='softmax', name='predictions_')(x)
+
+    print("modex.shape",x.shape)
+
+    return x
+
+def Xception(include_top=True, weights='imagenet',
+             input_tensor=None, input_shape=None,
+             pooling=None):
+    """Instantiates the Xception architecture.
+    Optionally loads weights pre-trained
+    on ImageNet. This model is available for TensorFlow only,
+    and can only be used with inputs following the TensorFlow
+    data format `(width, height, channels)`.
+    You should set `image_data_format="channels_last"` in your Keras config
+    located at ~/.keras/keras.json.
+    Note that the default input image size for this model is 299x299.
+    # Arguments
+        include_top: whether to include the fully-connected
+            layer at the top of the network.
+        weights: one of `None` (random initialization)
+            or "imagenet" (pre-training on ImageNet).
+        input_tensor: optional Keras tensor (i.e. output of `layers.Input()`)
+            to use as image input for the model.
+        input_shape: optional shape tuple, only to be specified
+            if `include_top` is False (otherwise the input shape
+            has to be `(299, 299, 3)`.
+            It should have exactly 3 inputs channels,
+            and width and height should be no smaller than 71.
+            E.g. `(150, 150, 3)` would be one valid value.
+        pooling: Optional pooling mode for feature extraction
+            when `include_top` is `False`.
+            - `None` means that the output of the model will be
+                the 4D tensor output of the
+                last convolutional layer.
+            - `avg` means that global average pooling
+                will be applied to the output of the
+                last convolutional layer, and thus
+                the output of the model will be a 2D tensor.
+            - `max` means that global max pooling will
+                be applied.
+        classes: optional number of classes to classify images
+            into, only to be specified if `include_top` is True, and
+            if no `weights` argument is specified.
+    # Returns
+        A Keras model instance.
+    # Raises
+        ValueError: in case of invalid argument for `weights`,
+            or invalid input shape.
+        RuntimeError: If attempting to run this model with a
+            backend that does not support separable convolutions.
+    """
+    if K.backend() != 'tensorflow':
+        raise RuntimeError('The Xception model is only available with '
+                           'the TensorFlow backend.')
+    if K.image_data_format() != 'channels_last':
+        warnings.warn('The Xception model is only available for the '
+                      'input data format "channels_last" '
+                      '(width, height, channels). '
+                      'However your settings specify the default '
+                      'data format "channels_first" (channels, width, height). '
+                      'You should set `image_data_format="channels_last"` in your Keras '
+                      'config located at ~/.keras/keras.json. '
+                      'The model being returned right now will expect inputs '
+                      'to follow the "channels_last" data format.')
+        K.set_image_data_format('channels_last')
+        old_data_format = 'channels_first'
+    else:
+        old_data_format = None
+
+    input_shape = (4,160,320,3)
+
+    if input_tensor is None:
+        img_input = Input(shape=input_shape)
+    else:
+        if not K.is_keras_tensor(input_tensor):
+            img_input = Input(tensor=input_tensor, shape=input_shape)
+        else:
+            img_input = input_tensor
+
+    print("img_input.shape",img_input.shape)
+    img_input0 = img_input[:,0]
+    x0=model1(img_input0,include_top)
+    x0 = Dense(40, activation='softmax', name='predictions0')(x0)
+
+    img_input1 = img_input[:,1]
+    x1=model1(img_input1,include_top)
+    x1 = Dense(40, activation='softmax', name='predictions1')(x1)
+
+    img_input2 = img_input[:,2]
+    x2=model1(img_input2,include_top)
+    x2 = Dense(40, activation='softmax', name='predictions2')(x2)
+
+    img_input3 = img_input[:,3]
+    x3=model1(img_input3,include_top)
+    x3 = Dense(40, activation='softmax', name='predictions3')(x3)
+
+    print("x0.shape",x0.shape)
+    x = np.add(x0,x1)
+    x = np.add(x,x2)
+    x = np.add(x,x3)
+
+    print("x.shape",x.shape)
+     #K.concatenate([x0,x1,x2,x3] , axis=-1)
+    '''
     if include_top:
         x = GlobalAveragePooling2D(name='avg_pool')(x)
-        x = Dense(1000, activation='softmax', name='predictions')(x)
+        x = Dense(40, activation='softmax', name='predictions')(x)
     else:
         if pooling == 'avg':
             x = GlobalAveragePooling2D()(x)
         elif pooling == 'max':
             x = GlobalMaxPooling2D()(x)
+    '''
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
@@ -216,6 +250,8 @@ def Xception(include_top=True, weights='imagenet',
         K.set_image_data_format(old_data_format)
     return model
 
+def append_data(data1,data2):
+    return np.append(data1,[data2],0)
 
 if __name__ == '__main__':
     # Load and compile model
@@ -229,19 +265,32 @@ if __name__ == '__main__':
             print('----------- On Epoch: ' + str(i) + ' ----------')
             for x_train,x_train_0_5S,x_train_2S,x_train_5S, y_train, x_test,x_test_0_5S,x_test_2S,x_test_5S, y_test in load_batches():   
                 # Model input requires numpy array
+
                 x_train = np.array(x_train)
+                x_train1 = np.array([x_train])
                 x_train_0_5S = np.array(x_train_0_5S)
+                x_train1 = append_data(x_train1,x_train_0_5S)
                 x_train_2S = np.array(x_train_2S)
+                x_train1 = append_data(x_train1,x_train_2S)
                 x_train_5S = np.array(x_train_5S)
+                x_train1 = append_data(x_train1,x_train_5S)
+
+               
                 x_test = np.array(x_test)
+                x_test1 = np.array([x_test])
                 x_test_0_5S = np.array(x_test_0_5S)
+                x_test1 = append_data(x_test1,x_test_0_5S)
                 x_test_2S = np.array(x_test_2S)
+                x_test1 = append_data(x_test1,x_test_2S)
                 x_test_5S = np.array(x_test_5S)
+                x_test1 = append_data(x_test1,x_test_5S)
+
                 # Classification to one-hot vector
                 y_train = np_utils.to_categorical(y_train, num_classes=40)
                 y_test = np_utils.to_categorical(y_test, num_classes=40)
                 # Fit model to batch
-                model.fit(x_train,x_train_0_5S,x_train_2S,x_train_5S, y_train, verbose=1,epochs=1, validation_data=(x_test,x_test_0_5S,x_test_2S,x_test_5S, y_test))
+                model.fit(x_train, y_train, verbose=1,epochs=1, 
+                    validation_data=(x_test, y_test))
                 
                 batch_count += 1
                 # Save a checkpoint

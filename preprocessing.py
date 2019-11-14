@@ -7,6 +7,10 @@ from deepgtav.messages import frame2numpy
 import math
 
 
+def crop_bottom_half(image):
+    ''' Crops to bottom half of image '''
+    return image[int(image.shape[0] / 2):image.shape[0]]
+
 def get_steering(steering):
 
     if steering >=0:
@@ -20,6 +24,7 @@ frames = {}
 frame_index = 0
 frame_per_second = 10
 max_frame = frame_per_second * 10
+frames_inited= 0
 
 def insert_image_fifo(frame):
     global frame_index,frames
@@ -41,6 +46,7 @@ def append_data(data1,data2):
 
 def load_batches(verbose=1,samples_per_batch=1000):
     ''' Generator for loading batches of frames'''
+    global frame_index,frames,frames_inited
     dataset = gzip.open('dataset.pz')
     batch_count = 0
     while True:
@@ -63,21 +69,25 @@ def load_batches(verbose=1,samples_per_batch=1000):
                     data_dct = pickle.load(dataset)
                     frame = data_dct['frame']
                     image = frame2numpy(frame, (320,160))
+                    image = crop_bottom_half(image)
                     image = ((image / 255) - .5) * 2 # Simple preprocessing
                     insert_image_fifo(image)
                     count += 1
-                    if count <50:
-                        continue
+                    if frames_inited == 0:
+                        if count<50:
+                            continue
+
+                    frames_inited = 1
 
                     image_0_5S = get_image_fifo(5)
                     image_2S = get_image_fifo(20)
-                    image_5S = get_image_fifo(50)
+                    #image_5S = get_image_fifo(50)
 
                     # Train test split
                     # TODO: Dynamic train test split | Test series at end of batch
                     if (count <samples_per_batch*0.9): # Train
 
-                        x_train.append([image,image_0_5S,image_2S,image_5S])
+                        x_train.append([image,image_0_5S,image_2S])
                         #x_train_0_5S.append(image_0_5S)
                         #x_train_2S.append(image_2S)
                         #x_train_5S.append(image_5S)
@@ -89,7 +99,7 @@ def load_batches(verbose=1,samples_per_batch=1000):
                         y_train.append(steering1) 
 
                     else: # Test
-                        x_test.append([image,image_0_5S,image_2S,image_5S])
+                        x_test.append([image,image_0_5S,image_2S])
                         #x_test_0_5S.append(image_0_5S)
                         #x_test_2S.append(image_2S)
                         #x_test_5S.append(image_5S)
@@ -101,8 +111,8 @@ def load_batches(verbose=1,samples_per_batch=1000):
                         print('     ' + str(count) + ' data points loaded in batch.')
 
             print('Batch loaded.')
-            print("x_train.shape",len(x_train))
-            print("y_train.shape",len(y_train))
+            #print("x_train.shape",len(x_train))
+            #print("y_train.shape",len(y_train))
             batch_count += 1
             yield x_train, y_train, x_test, y_test
         except EOFError: # Breaks at end of file

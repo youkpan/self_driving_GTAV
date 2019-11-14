@@ -287,10 +287,11 @@ if __name__ == '__main__':
     try:
         for i in range(0,5):
             print('----------- On Epoch: ' + str(i) + ' ----------')
-            for x_train,x_train_0_5S,x_train_2S,x_train_5S, y_train, x_test,x_test_0_5S,x_test_2S,x_test_5S, y_test in load_batches():   
+            for x_train, y_train, x_test, y_test in load_batches():   
                 # Model input requires numpy array
 
                 x_train = np.array(x_train)
+                '''
                 x_train1 = np.array([x_train])
                 x_train_0_5S = np.array(x_train_0_5S)
                 x_train1 = append_data(x_train1,x_train_0_5S)
@@ -298,9 +299,11 @@ if __name__ == '__main__':
                 x_train1 = append_data(x_train1,x_train_2S)
                 x_train_5S = np.array(x_train_5S)
                 x_train1 = append_data(x_train1,x_train_5S)
+                '''
 
                
                 x_test = np.array(x_test)
+                '''
                 x_test1 = np.array([x_test])
                 x_test_0_5S = np.array(x_test_0_5S)
                 x_test1 = append_data(x_test1,x_test_0_5S)
@@ -308,10 +311,14 @@ if __name__ == '__main__':
                 x_test1 = append_data(x_test1,x_test_2S)
                 x_test_5S = np.array(x_test_5S)
                 x_test1 = append_data(x_test1,x_test_5S)
+                '''
 
                 # Classification to one-hot vector
                 y_train = np_utils.to_categorical(y_train, num_classes=40)
                 y_test = np_utils.to_categorical(y_test, num_classes=40)
+
+                print("x_train.shape",x_train.shape)
+                print("y_train.shape",y_train.shape)
                 # Fit model to batch
                 model.fit(x_train, y_train, verbose=1,epochs=1, 
                     validation_data=(x_test, y_test))

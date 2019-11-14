@@ -22,7 +22,7 @@ frame_per_second = 10
 max_frame = frame_per_second * 10
 
 def insert_image_fifo(frame):
-
+    global frame_index,frames
     frames[frame_index] = frame
     frame_index +=1
     if( frame_index >= max_frame):
@@ -30,6 +30,7 @@ def insert_image_fifo(frame):
 
 
 def get_image_fifo(index_offset):
+    global frame_index,frames
     idx = frame_index - index_offset 
     if idx<0:
         idx += max_frame

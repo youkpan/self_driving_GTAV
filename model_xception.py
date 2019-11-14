@@ -26,6 +26,8 @@ from keras.layers import SeparableConv2D
 from keras.layers import MaxPooling2D
 from keras.layers import GlobalAveragePooling2D
 from keras.layers import GlobalMaxPooling2D
+from keras.layers import Lambda
+from keras.models import Sequential
 from keras import backend as K
 from keras.engine.topology import get_source_inputs
 from keras.utils.data_utils import get_file
@@ -33,8 +35,9 @@ from keras.utils import np_utils
 from keras.applications.imagenet_utils import decode_predictions
 from keras.preprocessing import image
 
-def model1(img_input,include_top):
-    print("model1 img_input.shape",img_input.shape)
+def model1():
+    img_input = Input(shape=(160,320,3))
+    #print("model1 img_input.shape",img_input.shape)
     x = Conv2D(32, (3, 3), strides=(2, 2), use_bias=False, name='block1_conv1')(img_input)
     x = BatchNormalization(name='block1_conv1_bn')(x)
     x = Activation('relu', name='block1_conv1_act')(x)
@@ -120,13 +123,23 @@ def model1(img_input,include_top):
     x = SeparableConv2D(2048, (3, 3), padding='same', use_bias=False, name='block14_sepconv2')(x)
     x = BatchNormalization(name='block14_sepconv2_bn')(x)
     x = Activation('relu', name='block14_sepconv2_act')(x)
-
+    
     x = GlobalAveragePooling2D(name='avg_pool_')(x)
     x = Dense(200, activation='softmax', name='predictions_')(x)
-
+    '''
+    
+    if include_top:
+        x = GlobalAveragePooling2D(name='avg_pool')(x)
+        x = Dense(40, activation='softmax', name='predictions')(x)
+    else:
+        if pooling == 'avg':
+            x = GlobalAveragePooling2D()(x)
+        elif pooling == 'max':
+            x = GlobalMaxPooling2D()(x)
+    '''
     print("modex.shape",x.shape)
 
-    return x
+    return  Model(img_input, x, name='model_c')
 
 def Xception(include_top=True, weights='imagenet',
              input_tensor=None, input_shape=None,
@@ -203,39 +216,50 @@ def Xception(include_top=True, weights='imagenet',
             img_input = input_tensor
 
     print("img_input.shape",img_input.shape)
-    img_input0 = img_input[:,0]
-    x0=model1(img_input0,include_top)
+ 
+    model_c = model1()
+
+    def slice(x,idx):
+        return x[:,idx]
+
+    img_input0 =Lambda(slice,arguments={'idx': 0})(img_input)
+
+    x0=model_c(img_input0)
     x0 = Dense(40, activation='softmax', name='predictions0')(x0)
 
-    img_input1 = img_input[:,1]
-    x1=model1(img_input1,include_top)
+    img_input1 =Lambda(slice,arguments={'idx': 1})(img_input)
+    x1=model_c(img_input1)
     x1 = Dense(40, activation='softmax', name='predictions1')(x1)
 
-    img_input2 = img_input[:,2]
-    x2=model1(img_input2,include_top)
+    img_input2 =Lambda(slice,arguments={'idx': 2})(img_input)
+    x2=model_c(img_input2)
     x2 = Dense(40, activation='softmax', name='predictions2')(x2)
 
-    img_input3 = img_input[:,3]
-    x3=model1(img_input3,include_top)
+    img_input3 =Lambda(slice,arguments={'idx': 3})(img_input)
+    x3 = model_c(img_input3)
     x3 = Dense(40, activation='softmax', name='predictions3')(x3)
 
     print("x0.shape",x0.shape)
-    x = np.add(x0,x1)
-    x = np.add(x,x2)
-    x = np.add(x,x3)
+    #x = np.add(x0,x1)
+    #x = np.add(x,x2)
+    #x = np.add(x,x3)
+
+    added = layers.add([x0, x1])
+    added = layers.add([added, x2])
+    x = layers.add([added, x3])
+
+    '''
+    
+    img_input0 = Sequential([
+    Lambda(lambda img_input: img_input[:,0], input_shape=[img_input.shape[0],4,160,320,3])  # 第二维截前 2 个
+])
+    '''
+    
+    #x=model1(img_input0,include_top)
 
     print("x.shape",x.shape)
      #K.concatenate([x0,x1,x2,x3] , axis=-1)
-    '''
-    if include_top:
-        x = GlobalAveragePooling2D(name='avg_pool')(x)
-        x = Dense(40, activation='softmax', name='predictions')(x)
-    else:
-        if pooling == 'avg':
-            x = GlobalAveragePooling2D()(x)
-        elif pooling == 'max':
-            x = GlobalMaxPooling2D()(x)
-    '''
+
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.

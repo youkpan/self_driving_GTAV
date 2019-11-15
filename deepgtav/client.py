@@ -33,6 +33,7 @@ class Client:
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.s.connect((ip, int(port)))
+
         except:
             print('ERROR: Failed to connect to DeepGTAV')
         else:
@@ -57,6 +58,7 @@ class Client:
         if not data: 
             print('ERROR: Failed to receive message')       
             return None
+
         return self.targets.parse(frame, data.decode('utf-8'))
 
     def _recvall(self):

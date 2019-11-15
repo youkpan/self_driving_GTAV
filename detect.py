@@ -30,7 +30,7 @@ while True:
         data_dict = pickle.load(file) # Iterates through pickle generator
         count += 1
         # Every 10000 frames prints steering and displays frame 
-        if (count%100)==0:
+        if (count%4)==0:
             for k in data_dict.keys():
                 if k!='frame':
                     print(k,data_dict[k])
@@ -40,7 +40,7 @@ while True:
             image = frame2numpy(frame, (320,160))
 
             result = inference_detector(model, image)
-            show_result(image, result, model.CLASSES)
+            show_result(image, result, model.CLASSES,  wait_time=1)
             '''
             cv2.imshow('img',image)
             cv2.waitKey(-1) # Must press q on keyboard to continue to next frame

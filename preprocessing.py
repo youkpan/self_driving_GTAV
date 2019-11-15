@@ -44,7 +44,7 @@ def get_image_fifo(index_offset):
 def append_data(data1,data2):
     return np.append(data1,[data2],0)
 
-def load_batches(verbose=1,samples_per_batch=100):
+def load_batches(verbose=1,samples_per_batch=128):
     ''' Generator for loading batches of frames'''
     global frame_index,frames,frames_inited
     dataset = gzip.open('dataset.pz')
@@ -65,18 +65,18 @@ def load_batches(verbose=1,samples_per_batch=100):
             y_test = []
             count = 0
             print('----------- On Batch: ' + str(batch_count) + ' -----------')
-            while count < samples_per_batch:
+            while count < samples_per_batch or frames_inited==0:
                     data_dct = pickle.load(dataset)
                     frame = data_dct['frame']
                     image = frame2numpy(frame, (320,160))
                     image = crop_bottom_half(image)
                     image = ((image / 255) - .5) * 2 # Simple preprocessing
                     insert_image_fifo(image)
-                    count += 1
+                    
                     if frames_inited == 0:
-                        if count<50:
+                        if len(frames)<50:
                             continue
-
+                    count += 1
                     frames_inited = 1
 
                     image_0_5S = get_image_fifo(5)

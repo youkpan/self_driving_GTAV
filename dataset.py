@@ -9,7 +9,8 @@ from mmdet.apis import init_detector, inference_detector, show_result
 def reset():
     ''' Resets position of car to a specific location '''
     # Same conditions as below | 
-    dataset = Dataset(rate=10, frame=[320,160],throttle=True, brake=True, steering=True,location=True, drivingMode=True)
+    dataset = Dataset(rate=10, frame=[320,160],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True, reward=True)
+    #,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True, direction=True, reward=True
     scenario = Scenario(weather='EXTRASUNNY',vehicle='blista',time=[12,0],drivingMode=[786603,20.0],location=[-2573.13916015625, 3292.256103515625, 13.241103172302246])
     client.sendMessage(Config(scenario=scenario,dataset=dataset))
 
@@ -33,7 +34,8 @@ if __name__ == '__main__':
     # Creates a new connection to DeepGTAV using the specified ip and port 
     client = Client(ip=args.host, port=args.port, datasetPath=args.dataset_path, compressionLevel=9) 
     # Dataset options
-    dataset = Dataset(rate=10, frame=[320,160],throttle=True, brake=True, steering=True,location=True, drivingMode=True)
+    dataset = Dataset(rate=10, frame=[320,160],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True, reward=True)
+    #peds=True, trafficSigns=True, direction=True, reward=True
     # Automatic driving scenario
     #
     scenario = Scenario(weather='EXTRASUNNY',vehicle='blista',time=[12,0],drivingMode=[786603,20.0],location=[-2573.13916015625, 3292.256103515625, 13.241103172302246]) 

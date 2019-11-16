@@ -24,8 +24,8 @@ def detect(image,resize_h,resize_w):
     #print('Processing image: {}'.format(test_img))
 
     #out_path = join('out', 'images', basename(test_img))
-    in_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    out_image,steering = color_frame_pipeline([in_image], solid_lines=True)
+    in_image = image #cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    out_image,steering = color_frame_pipeline([in_image], solid_lines=False)
 
 
     #cv2.imwrite(out_path, cv2.cvtColor(out_image, cv2.COLOR_RGB2BGR))

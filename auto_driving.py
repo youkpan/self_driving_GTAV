@@ -16,18 +16,29 @@ def crop_bottom_half(image):
 #    print("Conintuing...")
 
 
+
 imgwidth = 640
 imgheight = 320
 # Loads into a consistent starting setting 
 print("Loading Scenario...")
+client = Client(ip='localhost', port=8000)#, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
+'''
+try:
+    #client.sendMessage(Stop()) # Stops DeepGTAV
+    client.close()
+except Exception as e:
+    pass
+
 client = Client(ip='localhost', port=8000, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
+'''
 dataset = Dataset(rate=10, frame=[imgwidth,imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True )
 #dataset = None
+ 
 scenario = Scenario(weather='EXTRASUNNY',vehicle='blista',time=[12,0],drivingMode=-1,location=[-2573.13916015625, 3292.256103515625, 13.241103172302246])
 client.sendMessage(Start(scenario=scenario,dataset=dataset))
 
 model = autodriving.predict.predict_init()
-
+steering = 0
 count = 0
 print("Starting Loop...")
 while True:
@@ -38,29 +49,30 @@ while True:
 
         #image = crop_bottom_half(image)
         #image = ((image/255) - .5) * 2
-        
 
         count += 1
 
-        if count %5 >0:
-            continue
-
         print("getpredict   ")
-        result = autodriving.predict.getpredict(image,model)
+        result = None
+        if count % 6 ==0:
+            result = autodriving.predict.getpredict(image,model)
         imginfo = {"imgwidth":imgwidth,"imgheight":imgheight}
         message['count'] = count
         speed = message['speed']
+        #steering = message['steering']
+        print("get steering",message['steering'])
 
-        throttle,breaker,steering_prediction = autodriving.control.getcontrol(image,result,model,imginfo,message)
-        print("count:",count,"throttle:",throttle,"breaker:",breaker,"steering:",steering_prediction,"speed:",speed)
+        throttle,breaker,steering = autodriving.control.getcontrol(image,result,model,imginfo,message)
+        print("count:",count,"throttle:",throttle,"breaker:",breaker,"steering:",steering,"speed:",speed)
 
-        client.sendMessage(Commands(throttle,breaker,steering_prediction  )) # Mutiplication scales decimal prediction for harder turning
+        client.sendMessage(Commands(throttle,breaker,steering  )) # Mutiplication scales decimal prediction for harder turning
         
 
     except KeyboardInterrupt:
         break
     except Exception as e:
         print("Excepted as: " + str(e))
+        raise e
         continue
 
 client.sendMessage(Stop()) # Stops DeepGTAV

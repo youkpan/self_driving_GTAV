@@ -24,6 +24,15 @@ class Line:
     def compute_bias(self):
         return self.y1 - self.slope * self.x1
 
+    def get_coords_line(self):
+        co = []
+        if abs(self.slope)<0.5:
+            return co
+        for x in range(int(self.x1),int(self.x2)):
+            y = self.slope * x + self.bias
+            co.append(np.array([x,y,x,y,1]))
+        return co
+
     def get_coords(self):
         return np.array([self.x1, self.y1, self.x2, self.y2])
 

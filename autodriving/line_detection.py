@@ -92,7 +92,7 @@ def get_lane_lines(color_image, solid_lines=True):
     :return: list of (candidate) lane lines.
     """
     # resize to 960 x 540
-    color_image = cv2.resize(color_image, (960, 540))
+    color_image = cv2.resize(color_image, (color_image.shape[1], color_image.shape[0]))
 
     # convert to grayscale
     img_gray = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)
@@ -172,10 +172,10 @@ def color_frame_pipeline(frames, solid_lines=True, temporal_smoothing=True):
         lane.draw(line_img)
 
     # keep only region of interest by masking
-    vertices = np.array([[(50, img_h),
-                          (450, 310),
-                          (490, 310),
-                          (img_w - 50, img_h)]],
+    vertices = np.array([[(int(50/960*img_w), img_h),
+                          (int(450/960*img_w), int(310/540*img_h)),
+                          (int(490/960*img_w), int(310/540*img_h)),
+                          (int(img_w - 50/960*img_w), img_h)]],
                         dtype=np.int32)
     img_masked, _ = region_of_interest(line_img, vertices)
 
@@ -183,4 +183,4 @@ def color_frame_pipeline(frames, solid_lines=True, temporal_smoothing=True):
     img_color = frames[-1] if is_videoclip else frames[0]
     img_blend = weighted_img(img_masked, img_color, α=0.8, β=1., λ=0.)
     steering = 0
-    return img_blend,steering
+    return img_blend,lane_lines

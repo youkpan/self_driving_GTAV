@@ -6,6 +6,8 @@ import cv2
 from datetime import datetime as dt
 import datetime
 import time
+import sys
+
 
 def get_safe_zone_lane(imgwidth,imgheight):
     safe_region_x,safe_region_y = get_safe_zone_detect(imgwidth,imgheight)
@@ -168,7 +170,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
             breaker = 0
 
 
-
+    '''
     out_image,lane_lines = autodriving.line_detect.detect(image,imgwidth,imgheight)
     coords = []
     for lane in lane_lines:
@@ -179,6 +181,8 @@ def solve_data(image,bboxes,labels,imginfo,message):
                 #print(co)
  
                 coords.append(co)
+
+    
 
     lane_in_safe_zone_i,x,y = lane_in_safe_zone(coords,labels,out_image,imgwidth,imgheight)
     if lane_in_safe_zone_i == 1:
@@ -196,13 +200,13 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
         if last_contol !=1:
             steering = control_param['steering_in_safe_zone_acc_base0']
-        '''
+        ' ''
         steering += control_param['steering_in_safe_zone_acc']+speed*control_param['steering_in_safe_zone_acc_speed']
         if steering>control_param['steering_in_safe_zone_acc_limit1']:
             steering += control_param['steering_in_safe_zone_acc_1']
         if steering>control_param['steering_in_safe_zone_acc_limit2']:
             steering = control_param['steering_in_safe_zone_acc_limit2']
-        '''
+        ' ''
 
         if steering <control_param['steering_in_safe_zone_acc_base']:
             steering = control_param['steering_in_safe_zone_acc_base']
@@ -224,13 +228,13 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
         if last_contol !=2:
             steering = control_param['steering_in_safe_zone_dsc_base0']
-        '''
+        ' ''
         steering -= (control_param['steering_in_safe_zone_dsc']+speed*control_param['steering_in_safe_zone_dsc_speed'])
         if steering<control_param['steering_in_safe_zone_dsc_limit1']:
             steering -= control_param['steering_in_safe_zone_dsc_1']
         if steering<control_param['steering_in_safe_zone_dsc_limit2']:
             steering = control_param['steering_in_safe_zone_dsc_limit2']
-        '''
+        ' ''
 
         if steering >  control_param['steering_in_safe_zone_dsc_base']:
             steering = control_param['steering_in_safe_zone_dsc_base']
@@ -249,6 +253,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
             control_timer = 0
 
     
+
     safe_region_x,safe_region_y = get_safe_zone_lane(imgwidth,imgheight)
     thickness = 2
     if lane_in_safe_zone_i==1:
@@ -260,6 +265,19 @@ def solve_data(image,bboxes,labels,imginfo,message):
     else:
         color=[0,200,0]
     out_image=draw_safe_zone_line(out_image,imgwidth,imgheight,safe_region_x,safe_region_y,color,thickness=thickness)
+    '''
+    slope1 = (256 - message['lanet_center_y']) / (256 - message['lanet_center_x'] + np.finfo(float).eps)
+    
+    if slope1>100:
+        slope1 = 100
+    if slope1<1 and slope1>0:
+        slope1 = 1
+    if slope1>-1 and slope1<0:
+        slope1 = -1
+    if slope1 == 0:
+        steering = 0
+    else:
+        steering = -1/slope1
 
     if len(bboxes)>0:
         thickness = 2
@@ -271,8 +289,13 @@ def solve_data(image,bboxes,labels,imginfo,message):
             color=[0,0,200]
         else:
             color=[0,200,0]
-        safe_region_x,safe_region_y = get_safe_zone_detect(imgwidth,imgheight)
-        out_image=draw_safe_zone_line(out_image,imgwidth,imgheight,safe_region_x,safe_region_y,color,thickness=thickness)
+    else:
+        color=[0,200,0]
+
+    thickness = 2
+    out_image = image
+    safe_region_x,safe_region_y = get_safe_zone_detect(imgwidth,imgheight)
+    out_image=draw_safe_zone_line(out_image,imgwidth,imgheight,safe_region_x,safe_region_y,color,thickness=thickness)
 
 
     if throttle <0:

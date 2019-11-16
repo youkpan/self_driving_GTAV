@@ -9,7 +9,7 @@ def predict_init():
     #checkpoint_file = 'D:\\self-driving\\mmdetection\\checkpoints/rpn_x101_32x4d_fpn_2x_20181218-0510af40.pth'
 
     # 初始化模型
-    model = init_detector(config_file, checkpoint_file)
+    model = init_detector(config_file, checkpoint_file )
 
     return model
 

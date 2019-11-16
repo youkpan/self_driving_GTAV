@@ -137,9 +137,12 @@ wait_timer1 = 0
 wait_timer2 = 0
 throttle =0.5
 last_contol = 0
+lane_in_safe_zone_i_1 = 0
+lane_in_safe_zone_i_2 = 0
 
 def solve_data(image,bboxes,labels,imginfo,message):
     global steering,control_timer,wait_timer1,wait_timer2,throttle,last_contol
+    global lane_in_safe_zone_i_1,lane_in_safe_zone_i_2
 
     try:
         speed = message['speed']
@@ -178,10 +181,18 @@ def solve_data(image,bboxes,labels,imginfo,message):
                 coords.append(co)
 
     lane_in_safe_zone_i,x,y = lane_in_safe_zone(coords,labels,out_image,imgwidth,imgheight)
-    if (wait_timer1==0 or wait_timer1<time.time()) and (  lane_in_safe_zone_i == 1):
+    if lane_in_safe_zone_i == 1:
+        lane_in_safe_zone_i_1 +=1
+    if lane_in_safe_zone_i == 2:
+        lane_in_safe_zone_i_2 +=1
+
+
+    if (wait_timer1==0 or wait_timer1<time.time()) and (  lane_in_safe_zone_i_1 >lane_in_safe_zone_i_2):
         if steering <0:
             steering = 0
         wait_timer1 = 0
+        lane_in_safe_zone_i_1 = 0
+        lane_in_safe_zone_i_2 = 0
 
         if last_contol !=1:
             steering = control_param['steering_in_safe_zone_acc_base0']
@@ -204,10 +215,12 @@ def solve_data(image,bboxes,labels,imginfo,message):
         wait_timer2 = wait_timer1
         cv2.line(out_image, (320,320), (350, 225),[0,255,0],2)
 
-    elif (wait_timer2==0 or wait_timer2<time.time()) and (  lane_in_safe_zone_i == 2): 
+    elif (wait_timer2==0 or wait_timer2<time.time()) and (   lane_in_safe_zone_i_1 <lane_in_safe_zone_i_2): 
         if steering >0:
             steering= 0
         wait_timer2 = 0
+        lane_in_safe_zone_i_1 = 0
+        lane_in_safe_zone_i_2 = 0
 
         if last_contol !=2:
             steering = control_param['steering_in_safe_zone_dsc_base0']

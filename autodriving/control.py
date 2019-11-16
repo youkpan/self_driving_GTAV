@@ -201,7 +201,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
         last_contol = 1
         control_timer = time.time() + control_param['steering_in_safe_zone_acc_timer']
         wait_timer1 = time.time() + control_param['steering_in_safe_zone_acc_wait_timer']
-        wait_timer2 = 0
+        wait_timer2 = wait_timer1
         cv2.line(out_image, (320,320), (350, 225),[0,255,0],2)
 
     elif (wait_timer2==0 or wait_timer2<time.time()) and (  lane_in_safe_zone_i == 2): 
@@ -227,7 +227,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
         last_contol = 2
         control_timer = time.time() + control_param['steering_in_safe_zone_dsc_timer']
         wait_timer2 = time.time() + control_param['steering_in_safe_zone_dsc_wait_timer']
-        wait_timer1=0
+        wait_timer1=wait_timer2
         cv2.line(out_image, (320,320), (290, 225),[0,255,0],2)
     else:
         #if last_contol == 1:

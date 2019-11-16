@@ -1,5 +1,5 @@
-breaker_in_safe_zone=0.5
-breaker_in_safe_zone_speed=0.05
+breaker_in_safe_zone=0.2
+breaker_in_safe_zone_speed=0.02
 throttle_in_safe_zone_fix=0.05
 O=0
 steering_in_safe_zone_acc=0.3

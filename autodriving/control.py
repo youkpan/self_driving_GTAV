@@ -275,7 +275,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
         steering1 = steering1*control_param['steering_lanet_mut']
 
-        if steering1 < 5 and steering1> -5:
+        if steering1 < control_param['steering_lanet_range'] and steering1> -control_param['steering_lanet_range']:
             if steering1 > 0.9:
                 steering1 =0.9
             if steering1 <- 0.9:
@@ -299,7 +299,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
         xx = 320
     
     cv2.line(image, (320,359), (int(xx)  ,int(yy)  ),[255,0,0],2)
-    
+
     print("slope1",slope1,"steering",steering,"steering1",steering1)
 
     if len(bboxes)>0:

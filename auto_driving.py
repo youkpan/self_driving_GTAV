@@ -50,7 +50,9 @@ dataset = Dataset(rate=10, frame=[imgwidth,imgheight],throttle=True, brake=True,
 #dataset = None
  #blista { "blista", "voltic", "packer" };
  #隧道[-2573.13916015625, 3292.256103515625, 13.241103172302246]
-scenario = Scenario(weather='EXTRASUNNY',vehicle='voltic',time=[12,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
+ #[-3048.73486328125, 736.7617797851562, 21.694440841674805]
+ #{ "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
+scenario = Scenario(weather='OVERCAST',vehicle='voltic',time=[9,0],drivingMode=-1,location=[1037.0552978515625, -2099.537353515625, 30.54058837890625])
 client.sendMessage(Start(scenario=scenario,dataset=dataset))
 
 model = autodriving.predict.predict_init()

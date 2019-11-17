@@ -123,10 +123,10 @@ def in_safe_zone(bboxes,labels,imgwidth,imgheight,check_lane=False):
                              ys_right = slope2 * x + bias2
                              if y > ys_right:
                                 if x<imgwidth/2:
-                                    print(bboxes[i],j,k)
+                                    print("in_safe_zone 1",bboxes[i],j,k)
                                     return 1,x,y
                                 else:
-                                    print(bboxes[i],j,k)
+                                    print("in_safe_zone 2",bboxes[i],j,k)
                                     return 2,x,y
 
 
@@ -141,9 +141,10 @@ throttle =0.5
 last_contol = 0
 lane_in_safe_zone_i_1 = 0
 lane_in_safe_zone_i_2 = 0
+breaker =0
 
 def solve_data(image,bboxes,labels,imginfo,message):
-    global steering,control_timer,wait_timer1,wait_timer2,throttle,last_contol
+    global steering,control_timer,wait_timer1,wait_timer2,throttle,last_contol,breaker
     global lane_in_safe_zone_i_1,lane_in_safe_zone_i_2
 
     try:
@@ -155,19 +156,24 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
     imgwidth = imginfo['imgwidth']
     imgheight = imginfo['imgheight']
-    breaker = 0
+    #breaker = 0
     #steering = message['steering']
-    if speed >10:
-        throttle = 0.5- (speed-10)*0.1
+
+    if speed > 10:
+        throttle = 0.4 - (speed-10)*0.01
+
+    if speed<0 and breaker>0:
+        breaker = 0
 
     if len(bboxes)>0:
         in_safe_zone_i,x,y = in_safe_zone(bboxes,labels,imgwidth,imgheight)
         if(in_safe_zone_i >0):
             print("box in_safe_zone !!")
-            throttle = message['throttle'] - control_param['throttle_in_safe_zone_fix']
+            throttle = throttle - control_param['throttle_in_safe_zone_fix']
             breaker = control_param['breaker_in_safe_zone']+(speed)*control_param['breaker_in_safe_zone_speed']
         else:
             breaker = 0
+            throttle = 0.4
 
 
     '''
@@ -269,7 +275,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
     slope1 = (256 - message['lanet_center_y']) / (256 - message['lanet_center_x'] + np.finfo(float).eps)
     steering1=0
     update_steering = 0
-    if slope1 != 0 and abs(slope1)>1 and message['lanet_center_y'] < 490/720*256 and message['lanet_center_y']>430/720*256:
+    if slope1 != 0 and abs(slope1)>0.1 and message['lanet_center_y'] < 490/720*256 and message['lanet_center_y']>430/720*256:
 
         steering1 = -1/slope1
 
@@ -282,7 +288,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
                 steering1 =-0.9
 
             if  abs(steering1-steering)< 1:
-                steering = steering *0.1 + steering1*0.9
+                steering = steering *(1-control_param['steering_lanet_smooth']) + steering1*control_param['steering_lanet_smooth']
                 update_steering =1
 
     if steering > 0.98 or steering< -0.98:
@@ -306,8 +312,8 @@ def solve_data(image,bboxes,labels,imginfo,message):
         thickness = 2
         if in_safe_zone_i==1:
             thickness = 4
-            color=[200,0,0]
-        if in_safe_zone_i==2:
+            color=[100,0,255]
+        elif in_safe_zone_i==2:
             thickness = 4
             color=[0,0,200]
         else:
@@ -323,12 +329,12 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
     if throttle <0:
         throttle = 0
-        breaker = (speed)*0.05
+        breaker += (speed)*0.02
 
-    if breaker>0.6:
-        breaker = 0.6
+    if breaker>1:
+        breaker = 1
 
-    throttle = 0.4
+    #throttle = 0.4
     return bboxes,labels,throttle,breaker,steering,out_image
 
 def process_result(img,
@@ -399,9 +405,9 @@ def process_result(img,
 
 def getcontrol(image,result,model,imginfo,message):
     
-    throttle = 0.5
-    breaker = 0
-    steering_prediction = 0
+    #throttle = 0.5
+    #breaker = 0
+    #steering_prediction = 0
 
     throttle,breaker,steering =process_result(image, result, model.CLASSES,imginfo, message, wait_time=1)
  

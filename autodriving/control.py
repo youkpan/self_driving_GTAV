@@ -85,7 +85,7 @@ def get_safe_zone_detect(imgwidth,imgheight):
     safe_region_x = [0,0,0,0]
     safe_region_y = [0,0,0,0]
 
-    safe_region_x[0] = imgwidth*280/1280
+    safe_region_x[0] = imgwidth*320/1280
     safe_region_y[0] = imgheight
 
     safe_region_x[1] = imgwidth*615/1280
@@ -94,7 +94,7 @@ def get_safe_zone_detect(imgwidth,imgheight):
     safe_region_x[2] = imgwidth*665/1280
     safe_region_y[2] = 450*imgheight/720
 
-    safe_region_x[3] = imgwidth*1000/1280
+    safe_region_x[3] = imgwidth*960/1280
     safe_region_y[3] = imgheight
 
     return safe_region_x,safe_region_y
@@ -267,29 +267,40 @@ def solve_data(image,bboxes,labels,imginfo,message):
     out_image=draw_safe_zone_line(out_image,imgwidth,imgheight,safe_region_x,safe_region_y,color,thickness=thickness)
     '''
     slope1 = (256 - message['lanet_center_y']) / (256 - message['lanet_center_x'] + np.finfo(float).eps)
-    
+    steering1=0
     update_steering = 0
-    if slope1 != 0 and abs(slope1)>1 and message['lanet_center_y'] < 350/454*256 and message['lanet_center_y']>300 /454*256:
+    if slope1 != 0 and abs(slope1)>1 and message['lanet_center_y'] < 490/720*256 and message['lanet_center_y']>430/720*256:
 
         steering1 = -1/slope1
 
-        steering1 = steering1*1.2
+        steering1 = steering1*control_param['steering_lanet_mut']
 
-        if steering1 < 0.9 and steering1> -0.9 and abs(steering1-steering)< 0.4:
-            steering = steering *0.3 + steering1*0.7
-            update_steering =1
+        if steering1 < 5 and steering1> -5:
+            if steering1 > 0.9:
+                steering1 =0.9
+            if steering1 <- 0.9:
+                steering1 =-0.9
 
-    if steering > 0.9 or steering< -0.9:
+            if  abs(steering1-steering)< 1:
+                steering = steering *0.1 + steering1*0.9
+                update_steering =1
+
+    if steering > 0.98 or steering< -0.98:
         steering = 0
 
     if update_steering == 0:
-        steering = 0.8 * steering
+        steering = control_param['steering_trun_back_rate']* steering
 
-    print("slope1",slope1,"steering",steering)
-
-    xx = message['lanet_center_x']/512*640
-    yy=message['lanet_center_y']/256*360
-    cv2.line(image, (320,359), (int(xx)  ,int(yy)  ),[0,255,0],2)
+    yy = 160
+    if steering!=0:
+        #-1/steering * (320) + b = 359
+        xx = -(yy- (359+1/steering * 320))*steering
+    else:
+        xx = 320
+    
+    cv2.line(image, (320,359), (int(xx)  ,int(yy)  ),[255,0,0],2)
+    
+    print("slope1",slope1,"steering",steering,"steering1",steering1)
 
     if len(bboxes)>0:
         thickness = 2
@@ -312,10 +323,10 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
     if throttle <0:
         throttle = 0
-        breaker = (speed)*0.1
+        breaker = (speed)*0.05
 
-    if breaker>1:
-        breaker = 1
+    if breaker>0.6:
+        breaker = 0.6
 
     throttle = 0.4
     return bboxes,labels,throttle,breaker,steering,out_image

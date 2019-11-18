@@ -52,6 +52,9 @@ def reset(location):
     dataset = Dataset(rate=FPS, frame=[show_imgwidth,show_imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True)
     #,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True, direction=True, reward=True
     #[-1917.06640625, 4595.87255859375, 56.853]
+    #-737.1954345703125, 1975.72265625, 133.54100036621094
+    #[2723.626953125, 3224.170654296875, 54.402042388916016]
+    #827.8175659179688, -1201.2620849609375, 45.51389694213867 街头竞速 没车
     scenario = Scenario(weather='EXTRASUNNY',vehicle='blista',time=[12,0],drivingMode=-1,location=location)
     client.sendMessage(Config(scenario=scenario,dataset=dataset))
 

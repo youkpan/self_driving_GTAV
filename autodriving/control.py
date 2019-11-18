@@ -159,8 +159,11 @@ def solve_data(image,bboxes,labels,imginfo,message):
     #breaker = 0
     #steering = message['steering']
 
-    if speed > 10:
+    if speed > 12:
         throttle = 0.4 - (speed-10)*0.01
+
+    if speed <8 and breaker==0:
+        throttle = throttle - (speed-10)*0.01
 
     if speed<0 and breaker>0:
         breaker = 0
@@ -286,6 +289,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
                 steering1 =0.9
             if steering1 <- 0.9:
                 steering1 =-0.9
+            steering1 =  (1+speed * control_param['steering_acc_speed'])*steering1
 
             if  abs(steering1-steering)< 1.5:
                 steering = steering *(1-control_param['steering_lanet_smooth']) + steering1*control_param['steering_lanet_smooth']
@@ -330,6 +334,8 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
     if breaker>1:
         breaker = 1
+    if  throttle>1:
+        throttle = 1
 
     #throttle = 0.4
     #throttle = 0

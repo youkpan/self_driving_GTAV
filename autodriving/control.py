@@ -335,6 +335,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
         breaker = 1
 
     #throttle = 0.4
+    #throttle = 0
     return bboxes,labels,throttle,breaker,steering,out_image
 
 def process_result(img,

@@ -42,6 +42,17 @@ USE_CAPTURE_CAM = 3
 image_source = USE_GTAV
 FPS = 10
 show_src_img = False
+show_imgwidth = 640
+show_imgheight = 320
+
+def reset():
+    global FPS,show_imgwidth,show_imgheight
+    ''' Resets position of car to a specific location '''
+    # Same conditions as below | 
+    dataset = Dataset(rate=FPS, frame=[show_imgwidth,show_imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True)
+    #,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True, direction=True, reward=True
+    scenario = Scenario(weather='EXTRASUNNY',vehicle='blista',time=[12,0],drivingMode=-1,location=[-2573.13916015625, 3292.256103515625, 13.241103172302246])
+    client.sendMessage(Config(scenario=scenario,dataset=dataset))
 
 if image_source == USE_GTAV:
     client = Client(ip='localhost', port=8000)#, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
@@ -59,12 +70,13 @@ if image_source == USE_GTAV:
      #blista { "blista", "voltic", "packer" };
      #隧道[-2573.13916015625, 3292.256103515625, 13.241103172302246]
      #[-3048.73486328125, 736.7617797851562, 21.694440841674805]
+     #[1037.0552978515625, -2099.537353515625, 30.54058837890625]
      #{ "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
-    scenario = Scenario(weather='OVERCAST',vehicle='voltic',time=[9,0],drivingMode=-1,location=[1037.0552978515625, -2099.537353515625, 30.54058837890625])
+    scenario = Scenario(weather='EXTRASUNNY',vehicle='voltic',time=[9,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
 
     client.sendMessage(Start(scenario=scenario,dataset=dataset))
-    imgwidth0 = 640
-    imgheight0 = 320
+    imgwidth0 = show_imgwidth
+    imgheight0 = show_imgheight
 elif image_source == USE_DATASET:
     file = gzip.open('dataset_test1.pz')
     imgwidth0 = 320
@@ -72,7 +84,7 @@ elif image_source == USE_DATASET:
 elif image_source == USE_CAPTURE_CAM:
     cap = cv2.VideoCapture(0)
     imgwidth0 = 1280
-    imgheight0 = 600
+    imgheight0 = 720
 
     cap.set(cv2.CAP_PROP_FRAME_WIDTH ,imgwidth0)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT,imgheight0)
@@ -80,15 +92,13 @@ elif image_source == USE_CAPTURE_CAM:
     ret,frame = cap.read()
     print("cam image size",(frame.shape[1],frame.shape[0]))
 
-show_imgwidth = 640
-show_imgheight = 320
-
 model = autodriving.predict.predict_init()
 steering = 0
 count = 0
 print("Starting Loop...")
 t_start0 = time.time()
-
+location_same_timer = 0
+location_last = 0
 
 while True:
     try:   
@@ -160,10 +170,19 @@ while True:
         if  count % 6 ==3 and not show_src_img:
             t_start = time.time()
             #message['lanet_center_x'],message['lanet_center_y'],message['lanet_img'],message['lanet_out'],message['binary_image'] = lanet.inference(image)
-            message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image'] = lanet.inference(image2)
+            message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = lanet.inference(image2)
             #message['lanet_img2'] = message['lanet_img'][:, :, (2, 1, 0)]
             print('lanet.inference time: {:.5f}s'.format(time.time() - t_start))
 
+        if len(message['location'])>0:
+            if location_same_timer>0 and time.time()>location_same_timer + 20:
+                reset()
+
+            if abs(message['location'][0]-location_last)<1    and location_same_timer == 0 :
+                location_same_timer = time.time()
+            else:
+                location_same_timer = 0
+                location_last = message['location'][0]
 
         throttle,breaker,steering = autodriving.control.getcontrol(image2,result,model,imginfo,message)
         print("count:",count,"throttle:",throttle,"breaker:",breaker,"steering:",steering,"speed:",speed)
@@ -173,14 +192,10 @@ while True:
 
                 #image3 =cv2.resize(message['lanet_img'], (640, 360), interpolation=cv2.INTER_LINEAR)
                 #cv2.imshow('lanet_img',image3)
-                img = np.zeros([256, 512,3],np.uint8)       # 输出一张图片，属性为高400，宽400，通道3
-                img[: ,: ,0] = message['binary_image']   
-                img[: ,: ,1] = message['binary_image']   
-                img[: ,: ,2] = message['binary_image']   
-
+   
+                img = message['binary_image']
                 xx = message['lanet_center_x']/512*640
                 yy = message['lanet_center_y']/256*320
-                img =cv2.resize(img, (640, 320), interpolation=cv2.INTER_LINEAR)
                 cv2.line(img, (320,319), (int(xx)  ,int(yy)  ),[0,200,0],2)
 
                 yy = 160
@@ -208,9 +223,9 @@ while True:
         break
     except Exception as e:
         print("Excepted as: " + str(e))
-        if image_source == USE_GTAV:
-            client.sendMessage(Stop()) # Stops DeepGTAV
-            client.close()
+        #if image_source == USE_GTAV:
+        #    client.sendMessage(Stop()) # Stops DeepGTAV
+        #    client.close()
         raise e
         continue
 

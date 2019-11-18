@@ -36,9 +36,14 @@ exit()
 
 # Loads into a consistent starting setting 
 print("Loading Scenario...")
+USE_GTAV = 1
+USE_DATASET = 2
+USE_CAPTURE_CAM = 3
+image_source = USE_GTAV
+FPS = 10
+show_src_img = False
 
-USE_GTAV = False
-if USE_GTAV:
+if image_source == USE_GTAV:
     client = Client(ip='localhost', port=8000)#, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
     '''
     try:
@@ -49,7 +54,7 @@ if USE_GTAV:
 
     client = Client(ip='localhost', port=8000, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
     '''
-    dataset = Dataset(rate=10, frame=[show_imgwidth,show_imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True )
+    dataset = Dataset(rate=FPS, frame=[show_imgwidth,show_imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True )
     #dataset = None
      #blista { "blista", "voltic", "packer" };
      #隧道[-2573.13916015625, 3292.256103515625, 13.241103172302246]
@@ -60,10 +65,20 @@ if USE_GTAV:
     client.sendMessage(Start(scenario=scenario,dataset=dataset))
     imgwidth0 = 640
     imgheight0 = 320
-else:
+elif image_source == USE_DATASET:
     file = gzip.open('dataset_test1.pz')
     imgwidth0 = 320
     imgheight0 = 160
+elif image_source == USE_CAPTURE_CAM:
+    cap = cv2.VideoCapture(0)
+    imgwidth0 = 1280
+    imgheight0 = 600
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH ,imgwidth0)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,imgheight0)
+    cap.set(cv2.CAP_PROP_FPS,FPS)
+    ret,frame = cap.read()
+    print("cam image size",(frame.shape[1],frame.shape[0]))
 
 show_imgwidth = 640
 show_imgheight = 320
@@ -74,11 +89,12 @@ count = 0
 print("Starting Loop...")
 t_start0 = time.time()
 
+
 while True:
     try:   
         t_loop_start = time.time()
 
-        if USE_GTAV:
+        if image_source == USE_GTAV:
             # Collect and preprocess image
             while True:
                 t_start_recv = time.time()
@@ -87,26 +103,34 @@ while True:
                     break
             image = frame2numpy(message['frame'], (imgwidth0,imgheight0))
             image2 = image
-        else:
+        elif image_source == USE_DATASET:
             message = pickle.load(file) # Iterates through pickle generator
             image = frame2numpy(message['frame'], (imgwidth0,imgheight0))
-            image2 =cv2.resize(image, (640, 320), interpolation=cv2.INTER_LINEAR)
+            image2 =cv2.resize(image, (show_imgwidth, show_imgheight), interpolation=cv2.INTER_LINEAR)
 
-            try:
-                speed = message['speed']
-            except Exception as e:
-                message['speed'] = 10
-            
+        elif image_source == USE_CAPTURE_CAM:
+            if not cap.isOpened():
+                raise "not cap.isOpened()"
+                exit()
+            message = {}
+            ret,frame = cap.read()
+            #frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+            image = frame2numpy(frame, (frame.shape[1],frame.shape[0]))
+            image2 =cv2.resize(image, (show_imgwidth, show_imgheight), interpolation=cv2.INTER_LINEAR)
         #image = crop_bottom_half(image)
         #image = ((image/255) - .5) * 2
 
         count += 1
         #
-        
 
         print("----------------------    getpredict    ----------------------")
+        
+        if count % 10 ==0 and show_src_img:
+            cv2.imshow('image2',image2)
+            cv2.waitKey(1)
+
         result = None
-        if count % 6 ==0:
+        if count % 6 ==0 and not show_src_img:
             t_start = time.time()
             result = autodriving.predict.getpredict(image2,model)
             print('getpredict time: {:.5f}s'.format(time.time() - t_start))
@@ -114,7 +138,18 @@ while True:
         imginfo = {"imgwidth":show_imgwidth,"imgheight":show_imgheight}
         message['count'] = count
         message['USE_GTAV'] = USE_GTAV
-        speed = message['speed']
+        try:
+            speed = message['speed']
+        except Exception as e:
+            message['speed'] = 10
+            speed = 10
+
+        try:
+            steering = message['steering']
+        except Exception as e:
+            message['steering'] = 10
+            message['location']=[]
+
         #steering = message['steering']
         print("get steering",message['steering'],message['location'])
 
@@ -122,7 +157,7 @@ while True:
         message['lanet_center_y']=128
 
         #image2= cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        if  count % 6 ==3 :
+        if  count % 6 ==3 and not show_src_img:
             t_start = time.time()
             #message['lanet_center_x'],message['lanet_center_y'],message['lanet_img'],message['lanet_out'],message['binary_image'] = lanet.inference(image)
             message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image'] = lanet.inference(image2)
@@ -133,7 +168,7 @@ while True:
         throttle,breaker,steering = autodriving.control.getcontrol(image2,result,model,imginfo,message)
         print("count:",count,"throttle:",throttle,"breaker:",breaker,"steering:",steering,"speed:",speed)
 
-        if  count % 6 ==3 :
+        if  count % 6 ==3 and not show_src_img:
             try:
 
                 #image3 =cv2.resize(message['lanet_img'], (640, 360), interpolation=cv2.INTER_LINEAR)
@@ -159,11 +194,12 @@ while True:
                 cv2.line(img, (320,319), (int(xx)  ,int(yy)  ),[255,0,0],2)
 
                 cv2.imshow('binary_image',img)
+                cv2.waitKey(1)
 
                 pass
             except Exception as e:
                 raise e
-        if USE_GTAV:
+        if image_source == USE_GTAV:
             client.sendMessage(Commands(throttle,breaker,steering  )) # Mutiplication scales decimal prediction for harder turning
         print('loop time: {:.5f}s'.format(time.time() - t_loop_start))
         
@@ -172,12 +208,12 @@ while True:
         break
     except Exception as e:
         print("Excepted as: " + str(e))
-        if USE_GTAV:
+        if image_source == USE_GTAV:
             client.sendMessage(Stop()) # Stops DeepGTAV
             client.close()
         raise e
         continue
 
-if USE_GTAV:
+if image_source == USE_GTAV:
     client.sendMessage(Stop()) # Stops DeepGTAV
     client.close()

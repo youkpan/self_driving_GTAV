@@ -275,7 +275,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
     slope1 = (256 - message['lanet_center_y']) / (256 - message['lanet_center_x'] + np.finfo(float).eps)
     steering1=0
     update_steering = 0
-    if slope1 != 0 and abs(slope1)>0.1 and message['lanet_center_y'] < 490/720*256 and message['lanet_center_y']>430/720*256:
+    if slope1 != 0 and abs(slope1)>0.1 and message['lanet_center_y'] < 520/720*256 and message['lanet_center_y']>430/720*256:
 
         steering1 = -1/slope1
 
@@ -287,12 +287,9 @@ def solve_data(image,bboxes,labels,imginfo,message):
             if steering1 <- 0.9:
                 steering1 =-0.9
 
-            if  abs(steering1-steering)< 1:
+            if  abs(steering1-steering)< 1.5:
                 steering = steering *(1-control_param['steering_lanet_smooth']) + steering1*control_param['steering_lanet_smooth']
                 update_steering =1
-
-    if steering > 0.98 or steering< -0.98:
-        steering = 0
 
     if update_steering == 0:
         steering = control_param['steering_trun_back_rate']* steering

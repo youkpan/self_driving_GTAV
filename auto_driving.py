@@ -45,13 +45,14 @@ show_src_img = False
 show_imgwidth = 640
 show_imgheight = 320
 
-def reset():
+def reset(location):
     global FPS,show_imgwidth,show_imgheight
     ''' Resets position of car to a specific location '''
     # Same conditions as below | 
     dataset = Dataset(rate=FPS, frame=[show_imgwidth,show_imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True)
     #,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True, direction=True, reward=True
-    scenario = Scenario(weather='EXTRASUNNY',vehicle='blista',time=[12,0],drivingMode=-1,location=[-2573.13916015625, 3292.256103515625, 13.241103172302246])
+    #[-1917.06640625, 4595.87255859375, 56.853]
+    scenario = Scenario(weather='EXTRASUNNY',vehicle='blista',time=[12,0],drivingMode=-1,location=location)
     client.sendMessage(Config(scenario=scenario,dataset=dataset))
 
 if image_source == USE_GTAV:
@@ -98,7 +99,7 @@ count = 0
 print("Starting Loop...")
 t_start0 = time.time()
 location_same_timer = 0
-location_last = 0
+location_last = [0,0,0]
 
 while True:
     try:   
@@ -177,15 +178,19 @@ while True:
         if len(message['location'])>0:
             if location_same_timer>0 :
                 print("------- not move, reset :",time.time() - location_same_timer)
+                if time.time()>location_same_timer + 10 and len(location_last)>0:
+                    location = location_last
+                    reset(location)
                 if time.time()>location_same_timer + 20:
-                    reset()
+                    location = [-1917.06640625, 4595.87255859375, 56.853]
+                    reset(location)
 
-            if abs(message['location'][0]-location_last)<1 :
+            if abs(message['location'][0]-location_last[0])<1 :
                 if location_same_timer == 0 :
                     location_same_timer = time.time()
             else:
                 location_same_timer = 0
-                location_last = message['location'][0]
+                location_last = message['location']
 
         throttle,breaker,steering = autodriving.control.getcontrol(image2,result,model,imginfo,message)
         print("count:",count,"throttle:",throttle,"breaker:",breaker,"steering:",steering,"speed:",speed)

@@ -6,6 +6,7 @@ import numpy as np
 import time
 import autodriving.predict
 import autodriving.control
+import gzip,pickle
 import sys
 sys.path.append("D:\\self-driving\\lanenet-lane-detection")
 sys.path.append('D:\\self-driving\\lanenet-lane-detection\\tools')
@@ -32,52 +33,76 @@ input()
 
 exit()
 '''
-imgwidth = 640
-imgheight = 320
+
 # Loads into a consistent starting setting 
 print("Loading Scenario...")
-client = Client(ip='localhost', port=8000)#, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
-'''
-try:
-    #client.sendMessage(Stop()) # Stops DeepGTAV
-    client.close()
-except Exception as e:
-    pass
 
-client = Client(ip='localhost', port=8000, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
-'''
-dataset = Dataset(rate=10, frame=[imgwidth,imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True )
-#dataset = None
- #blista { "blista", "voltic", "packer" };
- #隧道[-2573.13916015625, 3292.256103515625, 13.241103172302246]
- #[-3048.73486328125, 736.7617797851562, 21.694440841674805]
- #{ "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
-scenario = Scenario(weather='OVERCAST',vehicle='voltic',time=[9,0],drivingMode=-1,location=[1037.0552978515625, -2099.537353515625, 30.54058837890625])
-client.sendMessage(Start(scenario=scenario,dataset=dataset))
+USE_GTAV = False
+if USE_GTAV:
+    client = Client(ip='localhost', port=8000)#, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
+    '''
+    try:
+        #client.sendMessage(Stop()) # Stops DeepGTAV
+        client.close()
+    except Exception as e:
+        pass
+
+    client = Client(ip='localhost', port=8000, datasetPath="self_driving.pz", compressionLevel=9) # Default interface
+    '''
+    dataset = Dataset(rate=10, frame=[show_imgwidth,show_imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True )
+    #dataset = None
+     #blista { "blista", "voltic", "packer" };
+     #隧道[-2573.13916015625, 3292.256103515625, 13.241103172302246]
+     #[-3048.73486328125, 736.7617797851562, 21.694440841674805]
+     #{ "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
+    scenario = Scenario(weather='OVERCAST',vehicle='voltic',time=[9,0],drivingMode=-1,location=[1037.0552978515625, -2099.537353515625, 30.54058837890625])
+
+    client.sendMessage(Start(scenario=scenario,dataset=dataset))
+    imgwidth0 = 640
+    imgheight0 = 320
+else:
+    file = gzip.open('dataset_test1.pz')
+    imgwidth0 = 320
+    imgheight0 = 160
+
+show_imgwidth = 640
+show_imgheight = 320
 
 model = autodriving.predict.predict_init()
 steering = 0
 count = 0
 print("Starting Loop...")
 t_start0 = time.time()
+
 while True:
     try:   
         t_loop_start = time.time()
-        
-        # Collect and preprocess image
-        while True:
-            t_start_recv = time.time()
-            message = client.recvMessage()
-            if time.time() - t_start_recv >0.05:#is new frame
-                break
-        image = frame2numpy(message['frame'], (imgwidth,imgheight))
 
+        if USE_GTAV:
+            # Collect and preprocess image
+            while True:
+                t_start_recv = time.time()
+                message = client.recvMessage()
+                if time.time() - t_start_recv >0.05:#is new frame
+                    break
+            image = frame2numpy(message['frame'], (imgwidth0,imgheight0))
+            image2 = image
+        else:
+            message = pickle.load(file) # Iterates through pickle generator
+            image = frame2numpy(message['frame'], (imgwidth0,imgheight0))
+            image2 =cv2.resize(image, (640, 320), interpolation=cv2.INTER_LINEAR)
+
+            try:
+                speed = message['speed']
+            except Exception as e:
+                message['speed'] = 10
+            
         #image = crop_bottom_half(image)
         #image = ((image/255) - .5) * 2
 
         count += 1
-        #image2 =cv2.resize(image, (640, 360), interpolation=cv2.INTER_LINEAR)
-        image2 = image
+        #
+        
 
         print("----------------------    getpredict    ----------------------")
         result = None
@@ -86,8 +111,9 @@ while True:
             result = autodriving.predict.getpredict(image2,model)
             print('getpredict time: {:.5f}s'.format(time.time() - t_start))
 
-        imginfo = {"imgwidth":imgwidth,"imgheight":imgheight}
+        imginfo = {"imgwidth":show_imgwidth,"imgheight":show_imgheight}
         message['count'] = count
+        message['USE_GTAV'] = USE_GTAV
         speed = message['speed']
         #steering = message['steering']
         print("get steering",message['steering'],message['location'])
@@ -99,7 +125,7 @@ while True:
         if  count % 6 ==3 :
             t_start = time.time()
             #message['lanet_center_x'],message['lanet_center_y'],message['lanet_img'],message['lanet_out'],message['binary_image'] = lanet.inference(image)
-            message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image'] = lanet.inference(image)
+            message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image'] = lanet.inference(image2)
             #message['lanet_img2'] = message['lanet_img'][:, :, (2, 1, 0)]
             print('lanet.inference time: {:.5f}s'.format(time.time() - t_start))
 
@@ -130,15 +156,15 @@ while True:
                 else:
                     xx = 320
                 
-                cv2.line(img, (320,359), (int(xx)  ,int(yy)  ),[255,0,0],2)
+                cv2.line(img, (320,319), (int(xx)  ,int(yy)  ),[255,0,0],2)
 
                 cv2.imshow('binary_image',img)
 
                 pass
             except Exception as e:
                 raise e
-
-        client.sendMessage(Commands(throttle,breaker,steering  )) # Mutiplication scales decimal prediction for harder turning
+        if USE_GTAV:
+            client.sendMessage(Commands(throttle,breaker,steering  )) # Mutiplication scales decimal prediction for harder turning
         print('loop time: {:.5f}s'.format(time.time() - t_loop_start))
         
 
@@ -146,8 +172,12 @@ while True:
         break
     except Exception as e:
         print("Excepted as: " + str(e))
+        if USE_GTAV:
+            client.sendMessage(Stop()) # Stops DeepGTAV
+            client.close()
         raise e
         continue
 
-client.sendMessage(Stop()) # Stops DeepGTAV
-client.close()
+if USE_GTAV:
+    client.sendMessage(Stop()) # Stops DeepGTAV
+    client.close()

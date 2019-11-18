@@ -175,11 +175,14 @@ while True:
             print('lanet.inference time: {:.5f}s'.format(time.time() - t_start))
 
         if len(message['location'])>0:
-            if location_same_timer>0 and time.time()>location_same_timer + 20:
-                reset()
+            if location_same_timer>0 :
+                print("------- not move, reset :",time.time() - location_same_timer)
+                if time.time()>location_same_timer + 20:
+                    reset()
 
-            if abs(message['location'][0]-location_last)<1    and location_same_timer == 0 :
-                location_same_timer = time.time()
+            if abs(message['location'][0]-location_last)<1 :
+                if location_same_timer == 0 :
+                    location_same_timer = time.time()
             else:
                 location_same_timer = 0
                 location_last = message['location'][0]

@@ -12,7 +12,7 @@ sys.path.append("D:\\self-driving\\lanenet-lane-detection")
 sys.path.append('D:\\self-driving\\lanenet-lane-detection\\tools')
 #from  tools import lanenet_detect
 #import tools.lanenet_detect as lanenet_detect
-import sys
+import os
 sys.path.append("D:\\self-driving\\Lane-Detection2\\Codes-for-Lane-Detection\\ERFNet-CULane-PyTorch")
 import erfnet_detect
 from threading import Thread
@@ -67,8 +67,6 @@ while True:
 exit()
 
 '''
-
-
 # Loads into a consistent starting setting 
 print("Loading Scenario...")
 USE_GTAV = 1
@@ -111,7 +109,7 @@ if image_source == USE_GTAV:
      #[-3048.73486328125, 736.7617797851562, 21.694440841674805]
      #[1037.0552978515625, -2099.537353515625, 30.54058837890625]
      #{ "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
-    scenario = Scenario(weather='THUNDER',vehicle='voltic',time=[19,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
+    scenario = Scenario(weather='OVERCAST',vehicle='voltic',time=[19,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
 
     client.sendMessage(Start(scenario=scenario,dataset=dataset))
     imgwidth0 = show_imgwidth
@@ -121,7 +119,8 @@ elif image_source == USE_DATASET:
     imgwidth0 = 320
     imgheight0 = 160
 elif image_source == USE_CAPTURE_CAM:
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
+    show_src_img = True
     imgwidth0 = 1280
     imgheight0 = 720
 
@@ -179,12 +178,12 @@ while True:
 
         print("----------------------    getpredict    ----------------------")
         
-        if count % 10 ==0 and show_src_img:
+        if show_src_img:
             cv2.imshow('image2',image2)
             cv2.waitKey(1)
 
         result = None
-        if count % 6 ==0 and not show_src_img:
+        if count % 6 ==0  :
             t_start = time.time()
             #result = autodriving.predict.getpredict(image2,model)
             object_result = None
@@ -214,17 +213,21 @@ while True:
         message['lanet_center_y']=128
 
         #image2= cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        if  not show_src_img:
+        if  True:
             t_start = time.time()
-            #message['lanet_center_x'],message['lanet_center_y'],message['lanet_img'],message['lanet_out'],message['binary_image'] = lanet.inference(image)
-            image_erfnet =cv2.resize(image, (1640, 923), interpolation=cv2.INTER_LINEAR)
-            image_erfnet = image_erfnet[-590:]
-
-            message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = erfnet.inference(image_erfnet)
-            #message['lanet_img2'] = message['lanet_img'][:, :, (2, 1, 0)]
+            if 0 and count % 15 ==0 :
+                message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = lanet.inference(image2)
+            else:
+                #1640 923 / 590
+                image_erfnet =cv2.resize(image, (1640, 750), interpolation=cv2.INTER_LINEAR)
+                image_erfnet = image_erfnet[-590: ]
+                message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = erfnet.inference(image_erfnet)
+                #message['lanet_img2'] = message['lanet_img'][:, :, (2, 1, 0)]
             print('lanet.inference time: {:.5f}s'.format(time.time() - t_start))
 
-        if len(message['location'])>0:
+        
+
+        if len(message['location'])>0 and image_source == USE_GTAV:
             if location_same_timer>0 :
                 print("------- not move, reset :",time.time() - location_same_timer)
                 if time.time()>location_same_timer + 10 and len(location_last)>0:
@@ -244,7 +247,7 @@ while True:
         throttle,breaker,steering = autodriving.control.getcontrol(image2,object_result,model,imginfo,message)
         print("count:",count,"throttle:",throttle,"breaker:",breaker,"steering:",steering,"speed:",speed)
 
-        if  not show_src_img:
+        if True:
             try:
 
                 #image3 =cv2.resize(message['lanet_img'], (640, 360), interpolation=cv2.INTER_LINEAR)
@@ -271,10 +274,13 @@ while True:
                 pass
             except Exception as e:
                 raise e
+
         if image_source == USE_GTAV:
             client.sendMessage(Commands(throttle,breaker,steering  )) # Mutiplication scales decimal prediction for harder turning
         print('loop time: {:.5f}s'.format(time.time() - t_loop_start))
-        
+
+        if count % 3 == 1  :
+            os.system( 'cls' )
 
     except KeyboardInterrupt:
         break

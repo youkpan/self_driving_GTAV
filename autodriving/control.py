@@ -85,7 +85,7 @@ def get_safe_zone_detect(imgwidth,imgheight):
     safe_region_x = [0,0,0,0]
     safe_region_y = [0,0,0,0]
 
-    safe_region_x[0] = imgwidth*320/1280
+    safe_region_x[0] = imgwidth*420/1280
     safe_region_y[0] = imgheight
 
     safe_region_x[1] = imgwidth*615/1280
@@ -94,7 +94,7 @@ def get_safe_zone_detect(imgwidth,imgheight):
     safe_region_x[2] = imgwidth*665/1280
     safe_region_y[2] = 450*imgheight/720
 
-    safe_region_x[3] = imgwidth*960/1280
+    safe_region_x[3] = imgwidth*860/1280
     safe_region_y[3] = imgheight
 
     return safe_region_x,safe_region_y
@@ -142,9 +142,10 @@ last_contol = 0
 lane_in_safe_zone_i_1 = 0
 lane_in_safe_zone_i_2 = 0
 breaker =0
+decress_speed_timer = 0
 
 def solve_data(image,bboxes,labels,imginfo,message):
-    global steering,control_timer,wait_timer1,wait_timer2,throttle,last_contol,breaker
+    global steering,control_timer,wait_timer1,wait_timer2,throttle,last_contol,breaker,decress_speed_timer
     global lane_in_safe_zone_i_1,lane_in_safe_zone_i_2
 
     try:
@@ -159,14 +160,11 @@ def solve_data(image,bboxes,labels,imginfo,message):
     #breaker = 0
     #steering = message['steering']
 
-    if speed > 12:
-        throttle = 0.4 - (speed-10)*0.01
+    if speed > 1.2*control_param['target_speed']:
+        throttle = control_param['base_throttle'] - (speed-10)*0.01
 
-    if speed <8 and breaker==0:
-        throttle = throttle - (speed-10)*0.01
-
-    if speed<0 and breaker>0:
-        breaker = 0
+    if speed <0.8*control_param['target_speed'] and breaker==0 :
+        throttle = throttle - (speed-control_param['target_speed'])*0.01
 
     if len(bboxes)>0:
         in_safe_zone_i,x,y = in_safe_zone(bboxes,labels,imgwidth,imgheight)
@@ -178,6 +176,8 @@ def solve_data(image,bboxes,labels,imginfo,message):
             breaker = 0
             throttle = 0.4
 
+    if speed<=0 and breaker>0:
+        breaker = 0
 
     '''
     out_image,lane_lines = autodriving.line_detect.detect(image,imgwidth,imgheight)
@@ -304,6 +304,16 @@ def solve_data(image,bboxes,labels,imginfo,message):
         xx = -(yy- (359+1/steering * 320))*steering
     else:
         xx = 320
+
+    if abs(steering) > 0.5:
+        throttle = throttle * control_param['steering_overlimit_throttle_dsc']
+        breaker = control_param['steering_overlimit_break']
+        decress_speed_timer = time.time()+2
+
+    if decress_speed_timer>0 and time.time() >decress_speed_timer:
+         decress_speed_timer = 0 
+         breaker = 0
+
     
     cv2.line(image, (320,359), (int(xx)  ,int(yy)  ),[255,0,0],2)
 

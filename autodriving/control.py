@@ -291,7 +291,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
                 steering1 =-0.9
             steering1 =  (1+speed * control_param['steering_acc_speed'])*steering1
 
-            if  abs(steering1-steering)< 1.5:
+            if  abs(steering1-steering)< control_param['steering_lanet_diff_range']:
                 steering = steering *(1-control_param['steering_lanet_smooth']) + steering1*control_param['steering_lanet_smooth']
                 update_steering =1
 

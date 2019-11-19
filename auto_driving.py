@@ -15,11 +15,32 @@ sys.path.append('D:\\self-driving\\lanenet-lane-detection\\tools')
 import sys
 sys.path.append("D:\\self-driving\\Lane-Detection2\\Codes-for-Lane-Detection\\ERFNet-CULane-PyTorch")
 import erfnet_detect
+from threading import Thread
+from time import sleep
 
 def crop_bottom_half(image):
     ''' Crops to bottom half of image '''
     return image[int(image.shape[0] / 2):image.shape[0]]
 
+def asyncc(f):
+    def wrapper(*args, **kwargs):
+        thr = Thread(target = f, args = args, kwargs = kwargs)
+        thr.start()
+    return wrapper
+
+getpredict_running = 0
+object_result = None
+@asyncc
+def get_object_detect(image2,model):
+    global getpredict_running,object_result
+    if getpredict_running == 0:
+        getpredict_running = 1
+        print("------------ start getpredict------------------")
+        object_result = autodriving.predict.getpredict(image2,model)
+        print("------------ end getpredict------------------")
+        getpredict_running = 0
+
+    
 
 #if input("Continue?") == "y": # Wait until you load GTA V to continue, else can't connect to DeepGTAV
 #    print("Conintuing...")
@@ -90,7 +111,7 @@ if image_source == USE_GTAV:
      #[-3048.73486328125, 736.7617797851562, 21.694440841674805]
      #[1037.0552978515625, -2099.537353515625, 30.54058837890625]
      #{ "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
-    scenario = Scenario(weather='EXTRASUNNY',vehicle='voltic',time=[9,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
+    scenario = Scenario(weather='THUNDER',vehicle='voltic',time=[19,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
 
     client.sendMessage(Start(scenario=scenario,dataset=dataset))
     imgwidth0 = show_imgwidth
@@ -117,18 +138,23 @@ print("Starting Loop...")
 t_start0 = time.time()
 location_same_timer = 0
 location_last = [0,0,0]
-
+t_start_recv = time.time()
 while True:
     try:   
         t_loop_start = time.time()
 
         if image_source == USE_GTAV:
             # Collect and preprocess image
-            while True:
+
+            if time.time() - t_start_recv < 1/FPS:
                 t_start_recv = time.time()
                 message = client.recvMessage()
-                if time.time() - t_start_recv >0.05:#is new frame
-                    break
+            else:
+                while True:
+                    t_start_recv = time.time()
+                    message = client.recvMessage()
+                    if time.time() - t_start_recv >1/FPS*0.5:#is new frame
+                        break
             image = frame2numpy(message['frame'], (imgwidth0,imgheight0))
             image2 = image
         elif image_source == USE_DATASET:
@@ -160,7 +186,10 @@ while True:
         result = None
         if count % 6 ==0 and not show_src_img:
             t_start = time.time()
-            result = autodriving.predict.getpredict(image2,model)
+            #result = autodriving.predict.getpredict(image2,model)
+            object_result = None
+            if getpredict_running == 0:
+                get_object_detect(image2,model)
             print('getpredict time: {:.5f}s'.format(time.time() - t_start))
 
         imginfo = {"imgwidth":show_imgwidth,"imgheight":show_imgheight}
@@ -185,10 +214,12 @@ while True:
         message['lanet_center_y']=128
 
         #image2= cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        if  count % 6 ==3 and not show_src_img:
+        if  not show_src_img:
             t_start = time.time()
             #message['lanet_center_x'],message['lanet_center_y'],message['lanet_img'],message['lanet_out'],message['binary_image'] = lanet.inference(image)
-            image_erfnet =cv2.resize(image, (1640, 590), interpolation=cv2.INTER_LINEAR)
+            image_erfnet =cv2.resize(image, (1640, 923), interpolation=cv2.INTER_LINEAR)
+            image_erfnet = image_erfnet[-590:]
+
             message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = erfnet.inference(image_erfnet)
             #message['lanet_img2'] = message['lanet_img'][:, :, (2, 1, 0)]
             print('lanet.inference time: {:.5f}s'.format(time.time() - t_start))
@@ -210,10 +241,10 @@ while True:
                 location_same_timer = 0
                 location_last = message['location']
 
-        throttle,breaker,steering = autodriving.control.getcontrol(image2,result,model,imginfo,message)
+        throttle,breaker,steering = autodriving.control.getcontrol(image2,object_result,model,imginfo,message)
         print("count:",count,"throttle:",throttle,"breaker:",breaker,"steering:",steering,"speed:",speed)
 
-        if  count % 6 ==3 and not show_src_img:
+        if  not show_src_img:
             try:
 
                 #image3 =cv2.resize(message['lanet_img'], (640, 360), interpolation=cv2.INTER_LINEAR)

@@ -10,7 +10,7 @@ import gzip,pickle
 import sys
 sys.path.append("D:\\self-driving\\lanenet-lane-detection")
 sys.path.append('D:\\self-driving\\lanenet-lane-detection\\tools')
-#from  tools import lanenet_detect
+
 #import tools.lanenet_detect as lanenet_detect
 import os
 sys.path.append("D:\\self-driving\\Lane-Detection2\\Codes-for-Lane-Detection\\ERFNet-CULane-PyTorch")
@@ -48,10 +48,10 @@ image_path="D:\\self-driving\\lanenet-lane-detection\\data\\training_data_exampl
 image_path="D:\\self-driving\\lanenet-lane-detection\\data\\training_data_example\\image\\road2.png "
 weights_path="D:\\self-driving\\lanenet-lane-detection\\checkpoint\\tusimple_lanenet_vgg.ckpt"
 #test_lanenet( image_path,  weights_path)
-#lanet = lanenet_detect.mlanenet(weights_path)
-image_path="D:\\self-driving\\lanenet-lane-detection\\data\\training_data_example\\image\\0001.png"
-
- 
+USE_lanenet_detect = False
+if USE_lanenet_detect:
+    from  tools import lanenet_detect
+    lanet = lanenet_detect.mlanenet(weights_path)
 erfnet = erfnet_detect.erfnet()
 '''
 image_path="D:\\self-driving\\Lane-Detection2\\Codes-for-Lane-Detection\\ERFNet-CULane-PyTorch\\driver_37_30frame/00000.jpg"
@@ -77,6 +77,11 @@ FPS = 10
 show_src_img = False
 show_imgwidth = 640
 show_imgheight = 320
+
+location_cod=[[-1917.06640625, 4595.87255859375, 56.853],[-737.1954345703125, 1975.72265625, 133.54100036621094],
+[2723.626953125, 3224.170654296875, 54.402042388916016],[827.8175659179688, -1201.2620849609375, 45.51389694213867]]
+location_cod_idx = 0
+location_reset_time=0
 
 def reset(location):
     global FPS,show_imgwidth,show_imgheight
@@ -119,7 +124,7 @@ elif image_source == USE_DATASET:
     imgwidth0 = 320
     imgheight0 = 160
 elif image_source == USE_CAPTURE_CAM:
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     show_src_img = True
     imgwidth0 = 1280
     imgheight0 = 720
@@ -166,7 +171,11 @@ while True:
                 raise "not cap.isOpened()"
                 exit()
             message = {}
+            t_start_recv = time.time()
             ret,frame = cap.read()
+            while True:
+                if time.time() - t_start_recv >1/FPS:#is new frame
+                    break
             #frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
             image = frame2numpy(frame, (frame.shape[1],frame.shape[0]))
             image2 =cv2.resize(image, (show_imgwidth, show_imgheight), interpolation=cv2.INTER_LINEAR)
@@ -215,12 +224,12 @@ while True:
         #image2= cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         if  True:
             t_start = time.time()
-            if 0 and count % 15 ==0 :
+            if USE_lanenet_detect and count % 15 ==0 :
                 message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = lanet.inference(image2)
             else:
                 #1640 923 / 590
-                image_erfnet =cv2.resize(image, (1640, 750), interpolation=cv2.INTER_LINEAR)
-                image_erfnet = image_erfnet[-590: ]
+                image_erfnet =cv2.resize(image, (1640, 590), interpolation=cv2.INTER_LINEAR)
+                #image_erfnet = image_erfnet[-590: ]
                 message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = erfnet.inference(image_erfnet)
                 #message['lanet_img2'] = message['lanet_img'][:, :, (2, 1, 0)]
             print('lanet.inference time: {:.5f}s'.format(time.time() - t_start))
@@ -230,12 +239,19 @@ while True:
         if len(message['location'])>0 and image_source == USE_GTAV:
             if location_same_timer>0 :
                 print("------- not move, reset :",time.time() - location_same_timer)
-                if time.time()>location_same_timer + 10 and len(location_last)>0:
+                if time.time()>location_same_timer + 10 and len(location_last)>0 and time.time()-location_reset_time >120:
                     location = location_last
                     reset(location)
+                    location_reset_time = time.time()
+
                 if time.time()>location_same_timer + 20:
                     location = [-1917.06640625, 4595.87255859375, 56.853]
+                    location_cod_idx +=1
+                    if location_cod_idx>=len(location_cod):
+                        location_cod_idx = 0
+                    location = location_cod[location_cod_idx]
                     reset(location)
+                    location_reset_timmer = 0
 
             if abs(message['location'][0]-location_last[0])<1 :
                 if location_same_timer == 0 :
@@ -273,7 +289,7 @@ while True:
 
                 pass
             except Exception as e:
-                raise e
+                pass
 
         if image_source == USE_GTAV:
             client.sendMessage(Commands(throttle,breaker,steering  )) # Mutiplication scales decimal prediction for harder turning

@@ -116,18 +116,32 @@ def in_safe_zone(bboxes,labels,imgwidth,imgheight,check_lane=False):
                     y = bboxes[i][2*k+1]
 
                     if y > safe_region_y[1] :
+
                         #ys = -0.89 * x + 826.7
                         ys = slope1 * x + bias1
-                        if y > ys:
-                             #ys_right = 0.877 * x - 306.8
-                             ys_right = slope2 * x + bias2
-                             if y > ys_right:
+
+                        if y > ys :
+                            ys_right = slope2 * x + bias2
+                            if y > ys_right:
                                 if x<imgwidth/2:
                                     print("in_safe_zone 1",bboxes[i],j,k)
                                     return 1,x,y
                                 else:
                                     print("in_safe_zone 2",bboxes[i],j,k)
                                     return 2,x,y
+                        elif j ==0  and k ==1 and y <=ys and x<imgwidth/2: #左下点，在安全区外
+                            #框框包括安全区
+                            #右下也在安全区外
+                            x1 =bboxes[i][2]
+                            y1 =bboxes[i][3]
+
+                            if y1 > safe_region_y[1] and x1>imgwidth/2:
+                                ys_right1 = slope2 * x1 + bias2
+                                if  y1 < ys_right1:
+                                    print("in_safe_zone full",bboxes[i],j,k)
+                                    return 3,x,y
+
+
 
 
     return 0,0,0
@@ -314,9 +328,11 @@ def solve_data(image,bboxes,labels,imginfo,message):
          decress_speed_timer = 0 
          breaker = 0
 
+    try:
+        cv2.line(image, (320,359), (int(xx)  ,int(yy)  ),[255,0,0],2)
+    except Exception as e:
+        pass
     
-    cv2.line(image, (320,359), (int(xx)  ,int(yy)  ),[255,0,0],2)
-
     print("slope1",slope1,"steering",steering,"steering1",steering1)
 
     if len(bboxes)>0:
@@ -326,7 +342,10 @@ def solve_data(image,bboxes,labels,imginfo,message):
             color=[100,0,255]
         elif in_safe_zone_i==2:
             thickness = 4
-            color=[0,0,200]
+            color=[0,100,200]
+        elif in_safe_zone_i==3:
+            thickness = 4
+            color=[0,0,255]
         else:
             color=[0,200,0]
     else:

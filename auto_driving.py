@@ -10,12 +10,16 @@ import gzip,pickle
 import sys
 sys.path.append("D:\\self-driving\\lanenet-lane-detection")
 sys.path.append('D:\\self-driving\\lanenet-lane-detection\\tools')
-from  tools import lanenet_detect
+#from  tools import lanenet_detect
 #import tools.lanenet_detect as lanenet_detect
+import sys
+sys.path.append("D:\\self-driving\\Lane-Detection2\\Codes-for-Lane-Detection\\ERFNet-CULane-PyTorch")
+import erfnet_detect
 
 def crop_bottom_half(image):
     ''' Crops to bottom half of image '''
     return image[int(image.shape[0] / 2):image.shape[0]]
+
 
 #if input("Continue?") == "y": # Wait until you load GTA V to continue, else can't connect to DeepGTAV
 #    print("Conintuing...")
@@ -23,16 +27,26 @@ image_path="D:\\self-driving\\lanenet-lane-detection\\data\\training_data_exampl
 image_path="D:\\self-driving\\lanenet-lane-detection\\data\\training_data_example\\image\\road2.png "
 weights_path="D:\\self-driving\\lanenet-lane-detection\\checkpoint\\tusimple_lanenet_vgg.ckpt"
 #test_lanenet( image_path,  weights_path)
-lanet = lanenet_detect.mlanenet(weights_path)
+#lanet = lanenet_detect.mlanenet(weights_path)
+image_path="D:\\self-driving\\lanenet-lane-detection\\data\\training_data_example\\image\\0001.png"
+
+ 
+erfnet = erfnet_detect.erfnet()
 '''
-image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-a,b,c,d,e = lanet.inference(image)
-cv2.imshow('lanet_img',c)
-cv2.waitKey()
-input()
+image_path="D:\\self-driving\\Lane-Detection2\\Codes-for-Lane-Detection\\ERFNet-CULane-PyTorch\\driver_37_30frame/00000.jpg"
+image = cv2.imread(image_path).astype(np.float32)
+
+while True:
+
+    a,b,c,d = erfnet.inference(image)
+    cv2.imshow('lanet_img',d)
+    cv2.waitKey(1)
+    input("finish")
 
 exit()
+
 '''
+
 
 # Loads into a consistent starting setting 
 print("Loading Scenario...")
@@ -174,7 +188,8 @@ while True:
         if  count % 6 ==3 and not show_src_img:
             t_start = time.time()
             #message['lanet_center_x'],message['lanet_center_y'],message['lanet_img'],message['lanet_out'],message['binary_image'] = lanet.inference(image)
-            message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = lanet.inference(image2)
+            image_erfnet =cv2.resize(image, (1640, 590), interpolation=cv2.INTER_LINEAR)
+            message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = erfnet.inference(image_erfnet)
             #message['lanet_img2'] = message['lanet_img'][:, :, (2, 1, 0)]
             print('lanet.inference time: {:.5f}s'.format(time.time() - t_start))
 

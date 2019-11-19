@@ -14,8 +14,11 @@ file = gzip.open('dataset_test.pz')
 count=0
 
 # 首先下载模型文件https://s3.ap-northeast-2.amazonaws.com/open-mmlab/mmdetection/models/faster_rcnn_r50_fpn_1x_20181010-3d1b3351.pth
-config_file = 'D:\\self-driving\\mmdetection\\configs/faster_rcnn_r50_fpn_1x.py'
-checkpoint_file = 'D:\\self-driving\\mmdetection\\checkpoints/faster_rcnn_r50_fpn_1x_20181010-3d1b3351.pth'
+#config_file = 'D:\\self-driving\\mmdetection\\configs/faster_rcnn_r50_fpn_1x.py'
+#checkpoint_file = 'D:\\self-driving\\mmdetection\\checkpoints/faster_rcnn_r50_fpn_1x_20181010-3d1b3351.pth'
+
+config_file = 'D:\\self-driving\\mmdetection\\configs\\htc\\htc_x101_32x4d_fpn_20e_16gpu.py'
+checkpoint_file = 'D:\\self-driving\\mmdetection\\checkpoints/htc_x101_32x4d_fpn_20e_20190408-9eae4d0b.pth'
 #checkpoint_file = 'D:\\self-driving\\mmdetection\\checkpoints/rpn_x101_32x4d_fpn_2x_20181218-0510af40.pth'
  
 # 初始化模型

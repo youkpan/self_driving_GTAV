@@ -1,7 +1,7 @@
 breaker_in_safe_zone=0.01
 breaker_in_safe_zone_speed=0.001
 throttle_in_safe_zone_fix=0.05
-steering_lanet_mut=2.2
+steering_lanet_mut=1.2
 steering_trun_back_rate=0.6
 steering_lanet_range=6
 steering_lanet_smooth=0.9

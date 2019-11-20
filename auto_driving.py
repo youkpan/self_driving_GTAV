@@ -82,9 +82,12 @@ location_cod=[[-1917.06640625, 4595.87255859375, 56.853],[-737.1954345703125, 19
 [2723.626953125, 3224.170654296875, 54.402042388916016],[827.8175659179688, -1201.2620849609375, 45.51389694213867]]
 location_cod_idx = 0
 location_reset_time=0
+weather =[ "CLEAR", "BLIZZARD", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "NEUTRAL", "SNOW","EXTRASUNNY", "CLOUDS", "OVERCAST" ]
+weather_index = 0
+time_h=16
 
 def reset(location):
-    global FPS,show_imgwidth,show_imgheight
+    global FPS,show_imgwidth,show_imgheight,weather_index,time_h
     ''' Resets position of car to a specific location '''
     # Same conditions as below | 
     dataset = Dataset(rate=FPS, frame=[show_imgwidth,show_imgheight],throttle=True, brake=True, steering=True,location=True, drivingMode=True,speed=True,yawRate=True,time=True,vehicles=True, peds=True, trafficSigns=True)
@@ -93,7 +96,13 @@ def reset(location):
     #-737.1954345703125, 1975.72265625, 133.54100036621094
     #[2723.626953125, 3224.170654296875, 54.402042388916016]
     #827.8175659179688, -1201.2620849609375, 45.51389694213867 街头竞速 没车
-    scenario = Scenario(weather='EXTRASUNNY',vehicle='blista',time=[12,0],drivingMode=-1,location=location)
+    weather_index += 1 
+    if weather_index>=len(weather):
+        weather_index = 0
+    time_h +=1
+    if time_h>23:
+        time_h = 0
+    scenario = Scenario(weather=weather[weather_index],vehicle='blista',time=[time_h,0],drivingMode=-1,location=location)
     client.sendMessage(Config(scenario=scenario,dataset=dataset))
 
 if image_source == USE_GTAV:
@@ -113,8 +122,8 @@ if image_source == USE_GTAV:
      #隧道[-2573.13916015625, 3292.256103515625, 13.241103172302246]
      #[-3048.73486328125, 736.7617797851562, 21.694440841674805]
      #[1037.0552978515625, -2099.537353515625, 30.54058837890625]
-     #{ "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
-    scenario = Scenario(weather='OVERCAST',vehicle='voltic',time=[19,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
+     #
+    scenario = Scenario(weather='CLEAR',vehicle='voltic',time=[time_h,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
 
     client.sendMessage(Start(scenario=scenario,dataset=dataset))
     imgwidth0 = show_imgwidth
@@ -192,7 +201,7 @@ while True:
             cv2.waitKey(1)
 
         result = None
-        if count % 6 ==0  :
+        if count % 6 == 5  :
             t_start = time.time()
             #result = autodriving.predict.getpredict(image2,model)
             object_result = None
@@ -222,7 +231,7 @@ while True:
         message['lanet_center_y']=128
 
         #image2= cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        if  count % 2 ==0:
+        if 0 or count % 2 ==0:
             t_start = time.time()
             if USE_lanenet_detect and count % 15 ==0 :
                 message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = lanet.inference(image2)
@@ -230,8 +239,10 @@ while True:
                 #1640 923 / 590
                 image_erfnet =cv2.resize(image, (1640, 590), interpolation=cv2.INTER_LINEAR)
                 #image_erfnet = image_erfnet[-590: ]
-                message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = erfnet.inference(image_erfnet)
+                message['lane_data'],message['binary_image0'],message['binary_image'] = erfnet.inference(image_erfnet)
                 #message['lanet_img2'] = message['lanet_img'][:, :, (2, 1, 0)]
+                message['lanet_center_x'] = message['lane_data']["center"][0]
+                message['lanet_center_y'] = message['lane_data']["center"][1]
             print('lanet.inference time: {:.5f}s'.format(time.time() - t_start))
 
         

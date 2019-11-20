@@ -1,18 +1,23 @@
 breaker_in_safe_zone=0.001
 breaker_in_safe_zone_speed=0.001
 throttle_in_safe_zone_fix=0.005
-steering_lanet_mut=1.2
+steering_lanet_mut=0.8
 steering_trun_back_rate=0.1
 steering_lanet_range=6
-steering_lanet_smooth=0.6
+steering_lanet_smooth=0.8
 steering_acc_speed=0.04
 steering_overlimit_break=0.2
 steering_overlimit_throttle_dsc=0.8
 steering_lanet_diff_range=1.5	
 base_throttle=0.4
-target_speed=10
+target_speed=15
 uncerten_throttle_desc=0.99
 uncerten_break=0
+slope_road_end_limit=1.8
+#道路尽头方向超过限制 刹车
+breaker_road_end_limit=0.5
+#道路尽头方向超过限制 油门减少
+throttle_road_end_limit=0.3
 O=0
 steering_in_safe_zone_acc=0.3
 steering_in_safe_zone_acc_base0=0.89

@@ -292,7 +292,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
     slope1 = (256 - message['lanet_center_y']) / (256 - message['lanet_center_x'] + np.finfo(float).eps)
     steering1=0
     update_steering = 0
-    if slope1 != 0 and abs(slope1)>0.1 and message['lanet_center_y'] < 550/720*256 and message['lanet_center_y']>510/720*256:
+    if slope1 != 0 and abs(slope1)>0.1 and message['lanet_center_y'] < 540/720*256 and message['lanet_center_y']>510/720*256:
 
         steering1 = -1/slope1
 
@@ -329,6 +329,23 @@ def solve_data(image,bboxes,labels,imginfo,message):
     elif decress_speed_timer>0 and time.time() >decress_speed_timer:
          decress_speed_timer = 0 
          breaker = 0
+
+    try:
+        road_end_x = message['lane_data']["road_end"][0]
+        road_end_y = message['lane_data']["road_end"][1]
+        slope2 = (256 - road_end_y) / (256 - road_end_x + np.finfo(float).eps)
+        if road_end_y > 410/720*256 and road_end_y<430/720*256 and abs(slope2)<control_param['slope_road_end_limit']:
+            breaker = control_param['breaker_road_end_limit']
+            throttle = throttle * control_param['throttle_road_end_limit']
+
+            try:
+                cv2.line(image, (320,359), (int(road_end_x)  ,int(road_end_y)  ),[0,0,255],2)
+            except Exception as e:
+                pass
+
+    except Exception as e:
+        pass
+    
 
     try:
         cv2.line(image, (320,359), (int(xx)  ,int(yy)  ),[255,0,0],2)
@@ -455,6 +472,8 @@ def get_control_param():
   try:
     with open("./autodriving/control_param.txt",'r', encoding='UTF-8') as f:
       for line in f:
+        if line[0]=='#':
+            continue
         lined = line.split("=")
         if len(lined)>0:
           params[lined[0]] = lined[1]

@@ -8,6 +8,18 @@ import datetime
 import time
 import sys
 
+def imgPutText(img,msg,bottomLeftCornerOfText,fontScale=1,fontColor=(255,255,255),font= cv2.FONT_HERSHEY_SIMPLEX):
+    #bottomLeftCornerOfText = (10,500)
+    #fontScale              = 1
+    #fontColor              = (255,255,255)
+    lineType               = 2
+
+    cv2.putText(img,msg, 
+        bottomLeftCornerOfText, 
+        font, 
+        fontScale,
+        fontColor,
+        lineType)
 
 def get_safe_zone_lane(imgwidth,imgheight):
     safe_region_x,safe_region_y = get_safe_zone_detect(imgwidth,imgheight)
@@ -157,9 +169,10 @@ lane_in_safe_zone_i_1 = 0
 lane_in_safe_zone_i_2 = 0
 breaker =0
 decress_speed_timer = 0
+road_end_x_last = 256
 
 def solve_data(image,bboxes,labels,imginfo,message):
-    global steering,control_timer,wait_timer1,wait_timer2,throttle,last_contol,breaker,decress_speed_timer
+    global steering,control_timer,wait_timer1,wait_timer2,throttle,last_contol,breaker,decress_speed_timer,road_end_x_last
     global lane_in_safe_zone_i_1,lane_in_safe_zone_i_2
 
     try:
@@ -192,103 +205,31 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
     if speed<=0 and breaker>0:
         breaker = 0
-
-    '''
-    out_image,lane_lines = autodriving.line_detect.detect(image,imgwidth,imgheight)
-    coords = []
-    for lane in lane_lines:
-        coord = lane.get_coords_line()
-        #lane.draw(out_image, color=[0, 255, 0], thickness=5)
-        for co in coord:
-            if co[1]>40 and len(coord)>imgheight/15:
-                #print(co)
  
-                coords.append(co)
 
-    
+    try:
+        road_end_x = message['lane_data']["road_end"][0]
 
-    lane_in_safe_zone_i,x,y = lane_in_safe_zone(coords,labels,out_image,imgwidth,imgheight)
-    if lane_in_safe_zone_i == 1:
-        lane_in_safe_zone_i_1 +=1
-    if lane_in_safe_zone_i == 2:
-        lane_in_safe_zone_i_2 +=1
+        road_end_y = message['lane_data']["road_end"][1]
+        slope_road_end = (256 - road_end_y) / (256 - road_end_x + np.finfo(float).eps)
+        if road_end_y > 410/720*256 and road_end_y<460/720*256 :
+            road_end_x_last = road_end_x*control_param['road_end_x_last_smooth'] + road_end_x_last*(1-control_param['road_end_x_last_smooth'])
+            if abs(slope_road_end)<control_param['slope_road_end_limit']:
+                breaker = control_param['breaker_road_end_limit']
+                throttle = throttle * control_param['throttle_road_end_limit']
 
+                try:
+                    cv2.line(image, (320,359), (int(road_end_x)  ,int(road_end_y)  ),[0,0,255],2)
+                except Exception as e:
+                    pass
+            imgPutText(image,"[End limit]",(0,250),fontColor=(0,0,255),fontScale=0.5)
+            try:
+                cv2.circle(image,  (int(road_end_x)  ,int(road_end_y)  ), 5, [190,20,20], -1)
+            except Exception as e:
+                pass
+    except Exception as e:
+        pass
 
-    if (wait_timer1==0 or wait_timer1<time.time()) and (  lane_in_safe_zone_i_1 >lane_in_safe_zone_i_2):
-        if steering <0:
-            steering = 0
-        wait_timer1 = 0
-        lane_in_safe_zone_i_1 = 0
-        lane_in_safe_zone_i_2 = 0
-
-        if last_contol !=1:
-            steering = control_param['steering_in_safe_zone_acc_base0']
-        ' ''
-        steering += control_param['steering_in_safe_zone_acc']+speed*control_param['steering_in_safe_zone_acc_speed']
-        if steering>control_param['steering_in_safe_zone_acc_limit1']:
-            steering += control_param['steering_in_safe_zone_acc_1']
-        if steering>control_param['steering_in_safe_zone_acc_limit2']:
-            steering = control_param['steering_in_safe_zone_acc_limit2']
-        ' ''
-
-        if steering <control_param['steering_in_safe_zone_acc_base']:
-            steering = control_param['steering_in_safe_zone_acc_base']
-
-        print("lane ! zone:",lane_in_safe_zone_i,"steering",steering,x,y)
-        throttle = throttle - control_param['steering_in_safe_zone_acc_throttle']
-        last_contol = 1
-        control_timer = time.time() + control_param['steering_in_safe_zone_acc_timer']
-        wait_timer1 = time.time() + control_param['steering_in_safe_zone_acc_wait_timer']
-        wait_timer2 = wait_timer1
-        cv2.line(out_image, (320,320), (350, 225),[0,255,0],2)
-
-    elif (wait_timer2==0 or wait_timer2<time.time()) and (   lane_in_safe_zone_i_1 <lane_in_safe_zone_i_2): 
-        if steering >0:
-            steering= 0
-        wait_timer2 = 0
-        lane_in_safe_zone_i_1 = 0
-        lane_in_safe_zone_i_2 = 0
-
-        if last_contol !=2:
-            steering = control_param['steering_in_safe_zone_dsc_base0']
-        ' ''
-        steering -= (control_param['steering_in_safe_zone_dsc']+speed*control_param['steering_in_safe_zone_dsc_speed'])
-        if steering<control_param['steering_in_safe_zone_dsc_limit1']:
-            steering -= control_param['steering_in_safe_zone_dsc_1']
-        if steering<control_param['steering_in_safe_zone_dsc_limit2']:
-            steering = control_param['steering_in_safe_zone_dsc_limit2']
-        ' ''
-
-        if steering >  control_param['steering_in_safe_zone_dsc_base']:
-            steering = control_param['steering_in_safe_zone_dsc_base']
-
-        print("lane ! zone:",lane_in_safe_zone_i,"steering",steering,x,y)
-        throttle = throttle - control_param['steering_in_safe_zone_dsc_throttle']
-        last_contol = 2
-        control_timer = time.time() + control_param['steering_in_safe_zone_dsc_timer']
-        wait_timer2 = time.time() + control_param['steering_in_safe_zone_dsc_wait_timer']
-        wait_timer1=wait_timer2
-        cv2.line(out_image, (320,320), (290, 225),[0,255,0],2)
-    else:
-        #if last_contol == 1:
-        if control_timer>0 and control_timer>time.time():
-            steering = 0
-            control_timer = 0
-
-    
-
-    safe_region_x,safe_region_y = get_safe_zone_lane(imgwidth,imgheight)
-    thickness = 2
-    if lane_in_safe_zone_i==1:
-        thickness = 4
-        color=[200,0,0]
-    if lane_in_safe_zone_i==2:
-        thickness = 4
-        color=[0,0,200]
-    else:
-        color=[0,200,0]
-    out_image=draw_safe_zone_line(out_image,imgwidth,imgheight,safe_region_x,safe_region_y,color,thickness=thickness)
-    '''
     slope1 = (256 - message['lanet_center_y']) / (256 - message['lanet_center_x'] + np.finfo(float).eps)
     steering1=0
     update_steering = 0
@@ -303,16 +244,25 @@ def solve_data(image,bboxes,labels,imginfo,message):
                 steering1 =0.9
             if steering1 <- 0.9:
                 steering1 =-0.9
+
             steering1 =  (1+speed * control_param['steering_acc_speed'])*steering1
 
             if  abs(steering1-steering)< control_param['steering_lanet_diff_range']:
                 steering = steering *(1-control_param['steering_lanet_smooth']) + steering1*control_param['steering_lanet_smooth']
                 update_steering =1
+            else:
+                imgPutText(image,"[Turn limit]",(0,290),fontColor=(0,0,255),fontScale=0.5)
+
 
     if update_steering == 0:
+        if message['lanet_center_y']>510/720*256:
+            imgPutText(image,"[Unknow Road]",(0,280),fontColor=(0,0,255),fontScale=0.5)
+
         steering = control_param['steering_trun_back_rate']* steering
         throttle = throttle * control_param['uncerten_throttle_desc']
         breaker = control_param['uncerten_break']
+    else:
+        imgPutText(image,"[Road update]",(0,280),fontColor=(200,100,100),fontScale=0.5)
 
     yy = 160
     if steering!=0:
@@ -329,23 +279,6 @@ def solve_data(image,bboxes,labels,imginfo,message):
     elif decress_speed_timer>0 and time.time() >decress_speed_timer:
          decress_speed_timer = 0 
          breaker = 0
-
-    try:
-        road_end_x = message['lane_data']["road_end"][0]
-        road_end_y = message['lane_data']["road_end"][1]
-        slope2 = (256 - road_end_y) / (256 - road_end_x + np.finfo(float).eps)
-        if road_end_y > 410/720*256 and road_end_y<430/720*256 and abs(slope2)<control_param['slope_road_end_limit']:
-            breaker = control_param['breaker_road_end_limit']
-            throttle = throttle * control_param['throttle_road_end_limit']
-
-            try:
-                cv2.line(image, (320,359), (int(road_end_x)  ,int(road_end_y)  ),[0,0,255],2)
-            except Exception as e:
-                pass
-
-    except Exception as e:
-        pass
-    
 
     try:
         cv2.line(image, (320,359), (int(xx)  ,int(yy)  ),[255,0,0],2)

@@ -1,23 +1,36 @@
+#安全区域 目标检测
 breaker_in_safe_zone=0.001
 breaker_in_safe_zone_speed=0.001
 throttle_in_safe_zone_fix=0.005
+#方向盘 放大系数
 steering_lanet_mut=0.8
-steering_trun_back_rate=0.1
+#方向盘 回转系数
+steering_trun_back_rate=0.3
+#方向盘 转向范围，超过范围不用
 steering_lanet_range=6
+#方向盘 平滑系数 
 steering_lanet_smooth=0.8
+#方向盘 跟随行驶速度放大系数
 steering_acc_speed=0.04
+#方向盘 超过限制 减速
 steering_overlimit_break=0.2
 steering_overlimit_throttle_dsc=0.8
-steering_lanet_diff_range=1.5	
+#方向盘 每次更新最大差异范围
+steering_lanet_diff_range=1.5
+#基础油门
 base_throttle=0.4
-target_speed=15
+#巡航速度
+target_speed=10
+#道路检测失败后的减速
 uncerten_throttle_desc=0.99
 uncerten_break=0
-slope_road_end_limit=1.8
+#道路尽头方向 斜率限制
+slope_road_end_limit=1.2
 #道路尽头方向超过限制 刹车
-breaker_road_end_limit=0.5
+breaker_road_end_limit=0.2
 #道路尽头方向超过限制 油门减少
-throttle_road_end_limit=0.3
+throttle_road_end_limit=0.8
+road_end_x_last_smooth=0.95
 O=0
 steering_in_safe_zone_acc=0.3
 steering_in_safe_zone_acc_base0=0.89

@@ -121,9 +121,9 @@ if image_source == USE_GTAV:
      #blista { "blista", "voltic", "packer" };
      #隧道[-2573.13916015625, 3292.256103515625, 13.241103172302246]
      #[-3048.73486328125, 736.7617797851562, 21.694440841674805]
-     #[1037.0552978515625, -2099.537353515625, 30.54058837890625]
+     #[1037.0552978515625, -2099.537353515625, 30.54058837890625][-3048.73486328125, 736.7617797851562, 21.694440841674805]
      #
-    scenario = Scenario(weather='CLEAR',vehicle='voltic',time=[time_h,0],drivingMode=-1,location=[-3048.73486328125, 736.7617797851562, 21.694440841674805])
+    scenario = Scenario(weather='CLEAR',vehicle='voltic',time=[time_h,0],drivingMode=-1,location=location_cod[0])
 
     client.sendMessage(Start(scenario=scenario,dataset=dataset))
     imgwidth0 = show_imgwidth
@@ -319,6 +319,6 @@ while True:
         raise e
         continue
 
-if image_source == USE_GTAV:
-    client.sendMessage(Stop()) # Stops DeepGTAV
-    client.close()
+#if image_source == USE_GTAV:
+#    client.sendMessage(Stop()) # Stops DeepGTAV
+#    client.close()

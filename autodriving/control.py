@@ -292,7 +292,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
     slope1 = (256 - message['lanet_center_y']) / (256 - message['lanet_center_x'] + np.finfo(float).eps)
     steering1=0
     update_steering = 0
-    if slope1 != 0 and abs(slope1)>0.1 and message['lanet_center_y'] < 520/720*256 and message['lanet_center_y']>430/720*256:
+    if slope1 != 0 and abs(slope1)>0.1 and message['lanet_center_y'] < 550/720*256 and message['lanet_center_y']>510/720*256:
 
         steering1 = -1/slope1
 
@@ -311,6 +311,8 @@ def solve_data(image,bboxes,labels,imginfo,message):
 
     if update_steering == 0:
         steering = control_param['steering_trun_back_rate']* steering
+        throttle = throttle * control_param['uncerten_throttle_desc']
+        breaker = control_param['uncerten_break']
 
     yy = 160
     if steering!=0:
@@ -324,7 +326,7 @@ def solve_data(image,bboxes,labels,imginfo,message):
         breaker = control_param['steering_overlimit_break']
         decress_speed_timer = time.time()+2
 
-    if decress_speed_timer>0 and time.time() >decress_speed_timer:
+    elif decress_speed_timer>0 and time.time() >decress_speed_timer:
          decress_speed_timer = 0 
          breaker = 0
 

@@ -222,7 +222,7 @@ while True:
         message['lanet_center_y']=128
 
         #image2= cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        if  True:
+        if  count % 2 ==0:
             t_start = time.time()
             if USE_lanenet_detect and count % 15 ==0 :
                 message['lanet_center_x'],message['lanet_center_y'] ,message['binary_image0'],message['binary_image'] = lanet.inference(image2)
@@ -295,8 +295,8 @@ while True:
             client.sendMessage(Commands(throttle,breaker,steering  )) # Mutiplication scales decimal prediction for harder turning
         print('loop time: {:.5f}s'.format(time.time() - t_loop_start))
 
-        if count % 3 == 1  :
-            os.system( 'cls' )
+        #if count % 3 == 1  :
+            #os.system( 'cls' )
 
     except KeyboardInterrupt:
         break

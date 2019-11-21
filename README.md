@@ -1,4 +1,4 @@
-<img src="/sample.gif?raw=true">
+[Hayoou Self driving](http://f.hayoou.com/blogs/entry/%E5%93%88%E5%8F%8B%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E5%AE%89%E5%85%A8%E8%BE%85%E5%8A%A9%E9%A9%BE%E9%A9%B6%E5%BA%94%E7%94%A8)
 
 # SantosNet
 Simple tools that I used to generate and run a self-driving car model with VPilot and DeepGTAV.
